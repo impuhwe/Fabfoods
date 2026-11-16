@@ -1,0 +1,162 @@
+import { useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+
+import {
+  ArrowLeft,
+  CalendarDays,
+  ClipboardList,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Settings,
+} from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import { cn } from '../../lib/cn.js';
+import Badge from '../ui/Badge.jsx';
+import Button from '../ui/Button.jsx';
+import Drawer from '../ui/Drawer.jsx';
+import IconButton from '../ui/IconButton.jsx';
+
+const NAV = [
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
+  { to: '/admin/reservations', label: 'Reservations', icon: CalendarDays },
+  {
+    to: '/admin/settings',
+    label: 'Settings',
+    icon: Settings,
+    roles: ['manager', 'admin'],
+  },
+];
+
+const TITLES = {
+  '/admin': 'Dashboard',
+  '/admin/orders': 'Orders',
+  '/admin/reservations': 'Reservations',
+  '/admin/settings': 'Settings',
+};
+
+function SidebarContent({ onNavigate }) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const items = NAV.filter((item) => !item.roles || item.roles.includes(user?.role));
+
+  async function handleLogout() {
+    await logout();
+    onNavigate?.();
+    navigate('/admin/login', { replace: true });
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="px-6 py-7">
+        <Link
+          to="/"
+          onClick={onNavigate}
+          className="font-display text-lg font-semibold tracking-tight text-cream-50"
+        >
+          FAB FOODS
+        </Link>
+        <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-cream-100/50">
+          Operations
+        </p>
+      </div>
+
+      <nav aria-label="Admin" className="flex-1 px-3">
+        {items.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+                isActive
+                  ? 'bg-cream-100/10 text-cream-50'
+                  : 'text-cream-100/60 hover:bg-cream-100/5 hover:text-cream-50',
+              )
+            }
+          >
+            <item.icon className="h-4 w-4" aria-hidden="true" />
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="space-y-4 border-t border-cream-100/10 p-4">
+        <div>
+          <p className="truncate text-sm font-medium text-cream-50">{user?.name}</p>
+          <p className="truncate text-xs text-cream-100/50">{user?.email}</p>
+          <div className="mt-2">
+            <Badge variant="ember" className="capitalize">
+              {user?.role}
+            </Badge>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-cream-100/70 transition-colors hover:bg-cream-100/5 hover:text-cream-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember-400"
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function AdminLayout() {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const title = TITLES[location.pathname] ?? 'Operations';
+
+  return (
+    <div className="min-h-dvh bg-cream-100">
+      <a href="#admin-main" className="skip-link">
+        Skip to content
+      </a>
+
+      <aside className="fixed inset-y-0 left-0 hidden w-64 bg-cocoa-950 lg:block">
+        <SidebarContent />
+      </aside>
+
+      <div className="lg:pl-64">
+        <header className="flex h-16 items-center justify-between gap-4 border-b border-cocoa-900/10 bg-cream-50 px-4 sm:px-6 lg:hidden">
+          <span className="font-display text-lg font-semibold">FAB FOODS</span>
+          <IconButton label="Open admin menu" onClick={() => setOpen(true)}>
+            <Menu className="h-5 w-5" aria-hidden="true" />
+          </IconButton>
+        </header>
+
+        <main id="admin-main" className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-12">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cocoa-500">
+                Operations
+              </p>
+              <h1 className="mt-1 font-display text-display-sm font-semibold text-cocoa-950">
+                {title}
+              </h1>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => navigate('/')}>
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Back to site
+            </Button>
+          </div>
+          <Outlet />
+        </main>
+      </div>
+
+      <Drawer open={open} onClose={() => setOpen(false)} title="Admin menu" side="left">
+        <div className="-mx-5 -my-5 h-[calc(100%+2.5rem)] bg-cocoa-950">
+          <SidebarContent onNavigate={() => setOpen(false)} />
+        </div>
+      </Drawer>
+    </div>
+  );
+}
+
+export default AdminLayout;

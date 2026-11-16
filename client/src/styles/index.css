@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-cream-100 font-sans text-cocoa-900 antialiased;
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    @apply bg-ember-300 text-cocoa-950;
+  }
+
+  :focus-visible {
+    outline: 2px solid theme('colors.ember.500');
+    outline-offset: 3px;
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-cocoa-950 focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-cream-50;
+  }
+
+  .surface-noise {
+    background-image: radial-gradient(rgba(33, 24, 17, 0.06) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+}
