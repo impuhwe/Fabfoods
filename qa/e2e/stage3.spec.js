@@ -35,7 +35,7 @@ test('signed-in customer places an offline order and sees it in account history'
   await page.goto('/menu');
   await page.getByLabel('Search the menu').fill('french');
   await page.getByRole('link', { name: 'French Fries' }).first().click();
-  await expect(page.getByRole('heading', { name: 'French Fries' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'FRENCH FRIES', exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Add to order/ }).click();
   await expect(page.getByRole('heading', { name: 'Your order' })).toBeVisible();
   await page.getByRole('link', { name: 'Review checkout' }).click();

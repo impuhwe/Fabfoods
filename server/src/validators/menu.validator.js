@@ -1,16 +1,16 @@
 import { z } from 'zod';
 
-const slugSchema = z
+export const slugSchema = z
   .string()
   .trim()
   .min(1)
   .max(120)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Must be lowercase kebab-case');
 
-const priceSchema = z.number().int('Price must be an integer amount in RWF').min(0);
+export const priceSchema = z.number().int('Price must be an integer amount in RWF').min(0);
 const countSchema = z.number().int().min(0);
 const sourcePdfSchema = z.enum(['food-menu', 'drink-menu']);
-const reviewStatusSchema = z.enum(['needs-review', 'spelling', 'ambiguous']);
+export const reviewStatusSchema = z.enum(['needs-review', 'spelling', 'ambiguous']);
 
 const sourceDocumentSchema = z
   .object({
@@ -26,7 +26,7 @@ const sourceDocumentSchema = z
 
 const includedItemSchema = z.string().trim().min(1).max(160);
 
-const sizeOptionSchema = z
+export const sizeOptionSchema = z
   .object({
     label: z.string().trim().min(1).max(60),
     price: priceSchema,
@@ -47,7 +47,7 @@ const addonOptionSchema = z
   })
   .strict();
 
-const addonGroupSchema = z
+export const addonGroupSchema = z
   .object({
     name: z.string().trim().min(1).max(80),
     selectionType: z.enum(['single', 'multiple']).default('single'),
@@ -104,7 +104,7 @@ const servingOptionSchema = z
     }
   });
 
-const servingGroupSchema = z
+export const servingGroupSchema = z
   .object({
     name: z.string().trim().min(1).max(80),
     selectionType: z.enum(['single', 'multiple']).default('single'),

@@ -129,7 +129,7 @@ export function OrderPage() {
       if (result.pending) {
         addToast({ title: 'Payment is still pending', variant: 'info' });
       } else if (result.failed) {
-        addToast({ title: 'Payment was not completed', variant: 'danger' });
+        addToast({ title: 'Payment was not completed', variant: 'error' });
       } else {
         addToast({ title: 'Payment verified', variant: 'success' });
       }

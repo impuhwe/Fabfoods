@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
+import BrandLogo from './BrandLogo.jsx';
 import { NAV_LINKS, SITE } from '../../lib/site.js';
 
 export function Footer() {
@@ -8,8 +9,10 @@ export function Footer() {
       <div className="mx-auto max-w-[1240px] px-5 py-14 sm:px-8 lg:px-12 lg:py-20">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_0.8fr_0.8fr_1fr]">
           <div>
-            <p className="font-display text-2xl font-semibold tracking-[-0.03em]">FAB FOODS</p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-ember-300">
+            <Link to="/" className="inline-flex items-center" aria-label="FAB FOODS home">
+              <BrandLogo onDark />
+            </Link>
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-ember-300">
               {SITE.slogan}
             </p>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-cream-100/60">

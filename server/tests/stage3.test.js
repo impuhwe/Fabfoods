@@ -11,6 +11,7 @@ import { createAdmin } from '../scripts/createAdmin.js';
 import { getSettings } from '../src/services/settings.service.js';
 import { seedMenu } from '../scripts/seedMenu.js';
 import { startTestDatabase, stopTestDatabase } from './helpers/db.js';
+import { publishSeededMenu } from './helpers/menu.js';
 import {
   API,
   fetchCsrf,
@@ -121,6 +122,7 @@ let adminTokens;
 beforeAll(async () => {
   await startTestDatabase();
   await seedMenu({ allowUnverified: true });
+  await publishSeededMenu();
   await createAdmin(ADMIN);
   await getSettings();
   await resetSettings();

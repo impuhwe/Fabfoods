@@ -10,8 +10,17 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const PUBLIC_ITEM_FILTER = {
+  isArchived: false,
+  verified: true,
+  needsReview: false,
+  hasUnresolvedBlockingIssues: { $ne: true },
+};
+
 function isOrderable(item) {
   if (!item.isAvailable || item.isArchived) return false;
+  if (!item.verified || item.needsReview) return false;
+  if (item.hasUnresolvedBlockingIssues) return false;
   return !(item.reviewTags ?? []).some((tag) => ORDER_BLOCKING_TAGS.has(tag));
 }
 
@@ -46,7 +55,7 @@ export function toPublicMenuItem(item, { detail = false } = {}) {
     isOrderable: isOrderable(item),
     orderabilityNote: isOrderable(item)
       ? ''
-      : 'Awaiting owner confirmation before online ordering.',
+      : 'Awaiting staff verification before online ordering.',
     isFeatured: Boolean(item.isFeatured),
     isPopular: Boolean(item.isPopular),
     hasSizeOptions: options.sizeOptions.length > 0,
@@ -71,7 +80,7 @@ export async function listCategories() {
   });
 
   const counts = await MenuItem.aggregate([
-    { $match: { isArchived: false } },
+    { $match: PUBLIC_ITEM_FILTER },
     { $group: { _id: '$category', count: { $sum: 1 } } },
   ]);
   const countByCategory = new Map(counts.map((entry) => [String(entry._id), entry.count]));
@@ -82,7 +91,7 @@ export async function listCategories() {
 }
 
 export async function listMenuItems(query) {
-  const filter = { isArchived: false };
+  const filter = { ...PUBLIC_ITEM_FILTER };
 
   if (query.category) {
     const category = await MenuCategory.findOne({ slug: query.category, isVisible: true });
@@ -130,7 +139,7 @@ export async function listMenuItems(query) {
 }
 
 export async function getMenuItemBySlug(slug) {
-  const item = await MenuItem.findOne({ slug, isArchived: false }).populate(
+  const item = await MenuItem.findOne({ slug, ...PUBLIC_ITEM_FILTER }).populate(
     'category',
     'name slug kind description displayOrder',
   );
@@ -141,8 +150,8 @@ export async function getMenuItemBySlug(slug) {
 export async function getMenuMeta() {
   const [categories, totalItems, featuredCount] = await Promise.all([
     listCategories(),
-    MenuItem.countDocuments({ isArchived: false }),
-    MenuItem.countDocuments({ isArchived: false, isFeatured: true }),
+    MenuItem.countDocuments(PUBLIC_ITEM_FILTER),
+    MenuItem.countDocuments({ ...PUBLIC_ITEM_FILTER, isFeatured: true }),
   ]);
 
   return {
@@ -150,7 +159,7 @@ export async function getMenuMeta() {
     totalItems,
     featuredCount,
     orderabilityNotice:
-      'Items marked as awaiting confirmation can be viewed but not added to an order yet.',
+      'Only staff-verified items are published. Published items awaiting review are hidden until resolved.',
   };
 }
 

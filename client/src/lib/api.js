@@ -1,9 +1,27 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
+const DEFAULT_API_BASE_URL = '/api/v1';
 const CSRF_COOKIE = 'ff_csrf';
 const UNSAFE_METHODS = new Set(['post', 'put', 'patch', 'delete']);
-const NO_REFRESH_URLS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'];
+const NO_REFRESH_PATHS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'];
+const STATUS_MESSAGES = {
+  400: 'Please check the details and try again.',
+  401: 'Your session has expired. Please sign in again.',
+  403: 'You do not have permission to do that.',
+  404: 'We could not find what you were looking for.',
+  429: 'Too many attempts. Please wait a moment and try again.',
+  500: 'The service is temporarily unavailable. Please try again.',
+  502: 'The service is temporarily unavailable. Please try again.',
+  503: 'The service is temporarily unavailable. Please try again.',
+  504: 'The service took too long to respond. Please try again.',
+};
+
+export function resolveApiBaseUrl(value) {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  return trimmed.replace(/\/+$/, '') || DEFAULT_API_BASE_URL;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL);
 
 export function readCookie(name) {
   if (typeof document === 'undefined') return null;
@@ -26,7 +44,7 @@ export async function ensureCsrfToken() {
 
   csrfRequest ??= api
     .get('/auth/csrf')
-    .then(() => readCookie(CSRF_COOKIE))
+    .then(({ data }) => data?.data?.csrfToken ?? readCookie(CSRF_COOKIE))
     .finally(() => {
       csrfRequest = null;
     });
@@ -44,6 +62,11 @@ api.interceptors.request.use(async (config) => {
 
 let refreshRequest;
 
+function shouldSkipRefresh(url = '') {
+  const path = url.split('?')[0];
+  return NO_REFRESH_PATHS.some((endpoint) => path === endpoint || path.endsWith(endpoint));
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -54,8 +77,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const url = original.url ?? '';
-    if (original._skipRefresh || NO_REFRESH_URLS.some((path) => url.includes(path))) {
+    if (original._skipRefresh || shouldSkipRefresh(original.url ?? '')) {
       return Promise.reject(error);
     }
 
@@ -75,11 +97,26 @@ api.interceptors.response.use(
 );
 
 export function getApiErrorMessage(error, fallback = 'Something went wrong. Please try again.') {
-  const details = error?.response?.data?.error?.details;
-  if (Array.isArray(details) && details.length > 0) {
-    return details[0].message ?? fallback;
+  if (error?.response) {
+    const data = error.response.data;
+    const details = data?.error?.details;
+
+    if (Array.isArray(details) && details.length > 0) {
+      const first = details.find((detail) => typeof detail?.message === 'string') ?? details[0];
+      if (typeof first === 'string' && first.trim()) return first;
+      if (typeof first?.message === 'string' && first.message.trim()) return first.message;
+    }
+
+    const message = data?.error?.message ?? data?.message;
+    if (typeof message === 'string' && message.trim()) return message;
+    return STATUS_MESSAGES[error.response.status] ?? fallback;
   }
-  return error?.response?.data?.error?.message ?? fallback;
+
+  if (error?.code === 'ECONNABORTED' || /timeout/i.test(error?.message ?? '')) {
+    return 'The request took too long. Please try again.';
+  }
+
+  return 'Unable to reach the server. Check your connection and try again.';
 }
 
 export default api;

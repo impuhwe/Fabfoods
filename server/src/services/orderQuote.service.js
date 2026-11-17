@@ -38,6 +38,18 @@ export async function quoteOrder(
   for (const line of items) {
     const item = bySlug.get(line.slug);
     if (!item) throw notFound(`Menu item not found: ${line.slug}`);
+    if (!item.verified || item.needsReview) {
+      throw conflict(
+        `${item.name} has not been verified by staff and cannot be ordered online yet`,
+        'ITEM_NOT_VERIFIED',
+      );
+    }
+    if (item.hasUnresolvedBlockingIssues) {
+      throw conflict(
+        `${item.name} has an unresolved review issue and cannot be ordered online yet`,
+        'ITEM_REVIEW_REQUIRED',
+      );
+    }
     if (!item.isAvailable) {
       throw conflict(`${item.name} is currently unavailable`, 'ITEM_UNAVAILABLE');
     }

@@ -51,6 +51,7 @@ export function CheckoutPage() {
   const [submitError, setSubmitError] = useState('');
   const [loadingQuote, setLoadingQuote] = useState(false);
   const idempotencyKey = useRef(newIdempotencyKey());
+  const submittingRef = useRef(false);
   const {
     register,
     watch,
@@ -157,6 +158,7 @@ export function CheckoutPage() {
   }, [enabledMethods, paymentMethod, setValue]);
 
   async function onSubmit(values) {
+    if (submittingRef.current) return;
     setSubmitError('');
     if (!quote) {
       setSubmitError('Wait for the order summary to finish pricing.');
@@ -171,6 +173,7 @@ export function CheckoutPage() {
       return;
     }
 
+    submittingRef.current = true;
     try {
       const result = await createOrder(
         {
@@ -210,6 +213,8 @@ export function CheckoutPage() {
     } catch (error) {
       idempotencyKey.current = newIdempotencyKey();
       setSubmitError(getApiErrorMessage(error, 'The order could not be placed.'));
+    } finally {
+      submittingRef.current = false;
     }
   }
 
@@ -254,7 +259,7 @@ export function CheckoutPage() {
       </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
-        <form className="space-y-6" onSubmit={onSubmit} noValidate>
+        <form id="checkout-form" className="space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="rounded-2xl border border-cocoa-900/10 bg-white p-6">
             <h2 className="font-display text-xl font-semibold text-cocoa-950">Your details</h2>
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -490,9 +495,10 @@ export function CheckoutPage() {
           )}
 
           <Button
+            type="submit"
+            form="checkout-form"
             size="lg"
             className="mt-5 w-full"
-            onClick={handleSubmit(onSubmit)}
             disabled={!canSubmit}
             loading={isSubmitting}
           >

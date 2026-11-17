@@ -106,7 +106,7 @@ export async function login(input, req, res) {
 
 export async function refresh(req, res) {
   const rawToken = req.cookies?.[COOKIE_NAMES.REFRESH];
-  if (!rawToken) {
+  if (typeof rawToken !== 'string' || rawToken.length === 0) {
     throw unauthenticated('Refresh token is missing', 'INVALID_REFRESH_TOKEN');
   }
 

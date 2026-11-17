@@ -108,6 +108,25 @@ export const MENU_DATA_SOURCES = Object.freeze({
 
 export const MENU_DATA_SOURCE_VALUES = Object.freeze(Object.values(MENU_DATA_SOURCES));
 
+export const MENU_REVIEW_STATUSES = Object.freeze({
+  NEEDS_REVIEW: 'needs-review',
+  SPELLING: 'spelling',
+  AMBIGUOUS: 'ambiguous',
+  VERIFIED: 'verified',
+});
+
+export const MENU_REVIEW_STATUS_VALUES = Object.freeze(Object.values(MENU_REVIEW_STATUSES));
+
+export const MENU_REVIEW_ISSUE_STATUSES = Object.freeze({
+  OPEN: 'open',
+  IN_PROGRESS: 'in-progress',
+  RESOLVED: 'resolved',
+});
+
+export const MENU_REVIEW_ISSUE_STATUS_VALUES = Object.freeze(
+  Object.values(MENU_REVIEW_ISSUE_STATUSES),
+);
+
 export const MENU_ORDER_BLOCKING_REVIEW_TAGS = Object.freeze([
   'addon-parent',
   'category',

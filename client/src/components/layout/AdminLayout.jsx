@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import {
   ArrowLeft,
   CalendarDays,
+  ClipboardCheck,
   ClipboardList,
   LayoutDashboard,
   LogOut,
@@ -16,11 +17,18 @@ import Badge from '../ui/Badge.jsx';
 import Button from '../ui/Button.jsx';
 import Drawer from '../ui/Drawer.jsx';
 import IconButton from '../ui/IconButton.jsx';
+import BrandLogo from './BrandLogo.jsx';
 
 const NAV = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
   { to: '/admin/reservations', label: 'Reservations', icon: CalendarDays },
+  {
+    to: '/admin/menu-review',
+    label: 'Menu review',
+    icon: ClipboardCheck,
+    roles: ['manager', 'admin'],
+  },
   {
     to: '/admin/settings',
     label: 'Settings',
@@ -33,6 +41,7 @@ const TITLES = {
   '/admin': 'Dashboard',
   '/admin/orders': 'Orders',
   '/admin/reservations': 'Reservations',
+  '/admin/menu-review': 'Menu review',
   '/admin/settings': 'Settings',
 };
 
@@ -50,12 +59,8 @@ function SidebarContent({ onNavigate }) {
   return (
     <div className="flex h-full flex-col">
       <div className="px-6 py-7">
-        <Link
-          to="/"
-          onClick={onNavigate}
-          className="font-display text-lg font-semibold tracking-tight text-cream-50"
-        >
-          FAB FOODS
+        <Link to="/" onClick={onNavigate} className="inline-flex" aria-label="FAB FOODS home">
+          <BrandLogo onDark compact />
         </Link>
         <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-cream-100/50">
           Operations
@@ -125,7 +130,7 @@ export function AdminLayout() {
 
       <div className="lg:pl-64">
         <header className="flex h-16 items-center justify-between gap-4 border-b border-cocoa-900/10 bg-cream-50 px-4 sm:px-6 lg:hidden">
-          <span className="font-display text-lg font-semibold">FAB FOODS</span>
+          <BrandLogo compact />
           <IconButton label="Open admin menu" onClick={() => setOpen(true)}>
             <Menu className="h-5 w-5" aria-hidden="true" />
           </IconButton>

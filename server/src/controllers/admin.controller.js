@@ -4,6 +4,7 @@ import { getSettings, toPublicSettings, updateSettings } from '../services/setti
 import * as orderService from '../services/order.service.js';
 import * as reservationService from '../services/reservation.service.js';
 import * as emailService from '../services/email.service.js';
+import * as adminMenuService from '../services/adminMenu.service.js';
 import EmailOutbox from '../models/EmailOutbox.js';
 import { notFound } from '../utils/errors.js';
 
@@ -92,4 +93,54 @@ export const retryEmail = asyncHandler(async (req, res) => {
 export const processEmails = asyncHandler(async (_req, res) => {
   const result = await emailService.processEmailOutbox();
   sendSuccess(res, result);
+});
+
+export const menuItems = asyncHandler(async (req, res) => {
+  const result = await adminMenuService.listAdminMenuItems(req.query);
+  sendSuccess(res, result.items, 200, result.meta);
+});
+
+export const menuCategories = asyncHandler(async (_req, res) => {
+  sendSuccess(res, { categories: await adminMenuService.listAdminMenuCategories() });
+});
+
+export const menuReviewIssues = asyncHandler(async (_req, res) => {
+  sendSuccess(res, { issues: await adminMenuService.listAdminReviewIssues() });
+});
+
+export const updateMenuItem = asyncHandler(async (req, res) => {
+  const item = await adminMenuService.updateAdminMenuItem(
+    req.params.id,
+    req.body,
+    req.user.id,
+  );
+  sendSuccess(res, { item });
+});
+
+export const verifyMenuItem = asyncHandler(async (req, res) => {
+  const item = await adminMenuService.verifyAdminMenuItem(
+    req.params.id,
+    req.body,
+    req.user.id,
+  );
+  sendSuccess(res, { item });
+});
+
+export const archiveMenuItem = asyncHandler(async (req, res) => {
+  const item = await adminMenuService.setAdminMenuItemArchived(req.params.id, true, req.user.id);
+  sendSuccess(res, { item });
+});
+
+export const restoreMenuItem = asyncHandler(async (req, res) => {
+  const item = await adminMenuService.setAdminMenuItemArchived(req.params.id, false, req.user.id);
+  sendSuccess(res, { item });
+});
+
+export const resolveMenuIssue = asyncHandler(async (req, res) => {
+  const issue = await adminMenuService.resolveAdminReviewIssue(
+    req.params.id,
+    req.body,
+    req.user.id,
+  );
+  sendSuccess(res, { issue });
 });

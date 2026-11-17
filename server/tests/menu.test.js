@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import MenuCategory from '../src/models/MenuCategory.js';
 import MenuItem from '../src/models/MenuItem.js';
+import MenuReviewIssue from '../src/models/MenuReviewIssue.js';
 import menuPdfManifest from '../src/scripts/data/menu.pdf.manifest.js';
 import { buildMenuSeedData } from '../src/services/menuSeed.service.js';
 import {
@@ -48,6 +49,7 @@ describe('PDF menu manifest', () => {
       pricedLines: 121,
       modeledRecords: 118,
       reviewFlags: 24,
+      reviewIssues: 24,
     });
 
     expect(menuPdfManifest.counts.combined).toMatchObject({
@@ -320,11 +322,33 @@ describe('menu seeding', () => {
     for (const item of items) {
       expect(item.needsReview).toBe(true);
       expect(item.verified).toBe(false);
+      expect(item.isAvailable).toBe(false);
+      expect(item.reviewStatus).toBeDefined();
       expect(item.dataSource).toBe('pdf');
       expect(item.sourcePage).toBeGreaterThan(0);
       expect(item.ingredients).toEqual([]);
       expect(item.allergens).toEqual([]);
     }
+  });
+
+  it('records all 24 review issues and blocks affected items until resolved', async () => {
+    await seedMenu({ allowUnverified: true });
+
+    expect(await MenuReviewIssue.countDocuments()).toBe(24);
+    expect(await MenuItem.countDocuments({ hasUnresolvedBlockingIssues: true })).toBeGreaterThan(0);
+
+    const crisp = await MenuItem.findOne({ slug: 'crispy-firsh-finger' });
+    const issue = await MenuReviewIssue.findOne({ issueId: 'crispy-firsh' }).select('_id');
+    expect(crisp.verified).toBe(false);
+    expect(crisp.isAvailable).toBe(false);
+    expect(crisp.hasUnresolvedBlockingIssues).toBe(true);
+    expect(crisp.reviewIssueIds.map(String)).toContain(String(issue._id));
+  });
+
+  it('refuses the removed reset flag', async () => {
+    await expect(seedMenu({ allowUnverified: true, reset: true })).rejects.toThrow(
+      /--reset is no longer supported/,
+    );
   });
 
   it('enforces integer prices, unique slugs and option integrity in the model', async () => {

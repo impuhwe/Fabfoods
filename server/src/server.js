@@ -1,6 +1,7 @@
 import env from './config/env.js';
 import { connectToDatabase, disconnectFromDatabase } from './config/db.js';
 import app from './app.js';
+import dns from 'node:dns';
 import logger from './utils/logger.js';
 
 let server;
@@ -39,6 +40,10 @@ process.on('unhandledRejection', (reason) => {
     message: reason instanceof Error ? reason.message : String(reason),
   });
 });
+// Work around unreliable local DNS resolution for MongoDB Atlas in development.
+if (env.isDevelopment) {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+}
 
 start().catch((error) => {
   logger.error('Failed to start API', { message: error.message });

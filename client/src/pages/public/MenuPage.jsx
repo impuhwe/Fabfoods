@@ -11,6 +11,7 @@ import MenuItemCard from '../../components/public/MenuItemCard.jsx';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { getMenuItems, getMenuMeta } from '../../services/publicApi.js';
 import { HERO_IMAGE } from '../../lib/imagery.js';
+import { getApiErrorMessage } from '../../lib/api.js';
 
 const PAGE_SIZE = 24;
 const SORT_OPTIONS = new Set(['recommended', 'price-asc', 'price-desc', 'name']);
@@ -76,8 +77,10 @@ export function MenuPage() {
         setItems(nextItems);
         setListMeta(meta);
       })
-      .catch(() => {
-        if (active) setError('The menu could not be loaded. Please try again.');
+      .catch((error) => {
+        if (active) {
+          setError(getApiErrorMessage(error, 'The menu could not be loaded. Please try again.'));
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -147,8 +150,8 @@ export function MenuPage() {
       setItems((current) => [...current, ...nextItems]);
       setListMeta(meta);
       setPage(nextPage);
-    } catch {
-      setError('More items could not be loaded. Please try again.');
+    } catch (error) {
+      setError(getApiErrorMessage(error, 'More items could not be loaded. Please try again.'));
     } finally {
       setLoadingMore(false);
     }

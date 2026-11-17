@@ -54,3 +54,43 @@ export async function retryAdminEmail(id) {
   const { data } = await api.post(`/admin/emails/${id}/retry`);
   return data.data.email;
 }
+
+export async function getAdminMenuItems(params = {}) {
+  const { data } = await api.get('/admin/menu/items', { params });
+  return { items: data.data, meta: data.meta };
+}
+
+export async function getAdminMenuCategories() {
+  const { data } = await api.get('/admin/menu/categories');
+  return data.data.categories;
+}
+
+export async function getAdminReviewIssues() {
+  const { data } = await api.get('/admin/menu/review-issues');
+  return data.data.issues;
+}
+
+export async function updateAdminMenuItem(id, payload) {
+  const { data } = await api.patch(`/admin/menu/items/${id}`, payload);
+  return data.data.item;
+}
+
+export async function verifyAdminMenuItem(id, payload = {}) {
+  const { data } = await api.post(`/admin/menu/items/${id}/verify`, payload);
+  return data.data.item;
+}
+
+export async function archiveAdminMenuItem(id) {
+  const { data } = await api.post(`/admin/menu/items/${id}/archive`);
+  return data.data.item;
+}
+
+export async function restoreAdminMenuItem(id) {
+  const { data } = await api.post(`/admin/menu/items/${id}/restore`);
+  return data.data.item;
+}
+
+export async function resolveAdminReviewIssue(id, payload) {
+  const { data } = await api.post(`/admin/menu/review-issues/${id}/resolve`, payload);
+  return data.data.issue;
+}

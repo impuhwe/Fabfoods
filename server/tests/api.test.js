@@ -44,6 +44,31 @@ describe('health', () => {
   });
 });
 
+describe('CORS', () => {
+  it('permits credentialed requests from the configured frontend origin', async () => {
+    const response = await request(app)
+      .options(`${API}/auth/login`)
+      .set('Origin', 'http://localhost:5173')
+      .set('Access-Control-Request-Method', 'POST')
+      .set('Access-Control-Request-Headers', 'content-type,x-csrf-token')
+      .expect(204);
+
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(response.headers['access-control-allow-credentials']).toBe('true');
+    expect(response.headers['access-control-allow-methods']).toContain('PATCH');
+    expect(response.headers['access-control-allow-headers']).toContain('X-CSRF-Token');
+  });
+
+  it('rejects unapproved origins', async () => {
+    const response = await request(app)
+      .get(`${API}/health/live`)
+      .set('Origin', 'https://example.com')
+      .expect(403);
+
+    expect(response.body.error.code).toBe('CORS_ORIGIN_DENIED');
+  });
+});
+
 describe('CSRF protection', () => {
   it('issues a readable CSRF cookie and returns the token', async () => {
     const response = await request(app).get(`${API}/auth/csrf`).expect(200);

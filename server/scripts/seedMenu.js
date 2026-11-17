@@ -1,9 +1,9 @@
 import { pathToFileURL } from 'node:url';
-import env from '../src/config/env.js';
 import { connectToDatabase, disconnectFromDatabase } from '../src/config/db.js';
 import MenuCategory from '../src/models/MenuCategory.js';
 import MenuItem from '../src/models/MenuItem.js';
 import menuPdfManifest from '../src/scripts/data/menu.pdf.manifest.js';
+import { syncBlockingFlags, upsertReviewIssues } from '../src/services/menuReview.service.js';
 import { buildMenuSeedData } from '../src/services/menuSeed.service.js';
 
 export async function seedMenu({
@@ -17,27 +17,11 @@ export async function seedMenu({
     );
   }
 
-  if (reset && env.isProduction) {
-    throw new Error('--reset is not allowed in production');
-  }
-
-  const { categories, items, summary } = buildMenuSeedData(manifest);
-
   if (reset) {
-    const existingCategories = await MenuCategory.find({
-      slug: { $in: categories.map((category) => category.slug) },
-    }).select('_id');
-
-    await MenuItem.deleteMany({
-      $or: [
-        { slug: { $in: items.map((item) => item.slug) } },
-        { category: { $in: existingCategories.map((category) => category._id) } },
-      ],
-    });
-    await MenuCategory.deleteMany({
-      _id: { $in: existingCategories.map((category) => category._id) },
-    });
+    throw new Error('--reset is no longer supported; seed only adds missing records');
   }
+
+  const { categories, items, reviewIssues, summary } = buildMenuSeedData(manifest);
 
   const categoryIds = new Map();
   let categoriesCreated = 0;
@@ -77,12 +61,16 @@ export async function seedMenu({
     itemsCreated += 1;
   }
 
+  await upsertReviewIssues(reviewIssues);
+  const itemsWithUnresolvedIssues = await syncBlockingFlags();
+
   return {
     ...summary,
     categoriesCreated,
     categoriesExisting,
     itemsCreated,
     itemsExisting,
+    itemsWithUnresolvedIssues,
   };
 }
 
@@ -110,7 +98,7 @@ async function main() {
   const summary = await seedMenu(options);
 
   console.warn(
-    'PDF-transcribed menu data: every seeded entry has needsReview=true and verified=false. Business review is still required.',
+    'PDF-transcribed menu data: every seeded entry has needsReview=true, verified=false, isAvailable=false, and unresolved review issues. Staff review is required before publishing.',
   );
   console.log(
     [
@@ -118,6 +106,7 @@ async function main() {
       `${summary.distinctProductNames} distinct product names; ${summary.sourceAddonLines} add-on lines; ${summary.modeledRecords} modeled records.`,
       `Categories created: ${summary.categoriesCreated}; existing: ${summary.categoriesExisting}.`,
       `Items created: ${summary.itemsCreated}; existing: ${summary.itemsExisting}.`,
+      `Review issues: ${summary.reviewIssues}; items with unresolved blocking issues: ${summary.itemsWithUnresolvedIssues}.`,
     ].join('\n'),
   );
 }

@@ -4,6 +4,8 @@ import {
   ADDON_SELECTION_TYPE_VALUES,
   MENU_DATA_SOURCES,
   MENU_DATA_SOURCE_VALUES,
+  MENU_REVIEW_STATUSES,
+  MENU_REVIEW_STATUS_VALUES,
 } from '../config/constants.js';
 import mediaSchema from './shared/media.schema.js';
 
@@ -390,6 +392,22 @@ const menuItemSchema = new mongoose.Schema(
     verified: {
       type: Boolean,
       default: false,
+    },
+    reviewStatus: {
+      type: String,
+      enum: MENU_REVIEW_STATUS_VALUES,
+      default: MENU_REVIEW_STATUSES.NEEDS_REVIEW,
+      index: true,
+    },
+    reviewIssueIds: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: 'MenuReviewIssue',
+      default: [],
+    },
+    hasUnresolvedBlockingIssues: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
     reviewNote: {
       type: String,

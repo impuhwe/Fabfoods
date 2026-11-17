@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: 'http://localhost:5173',
     channel: 'chrome',
     headless: true,
     screenshot: 'only-on-failure',
@@ -17,14 +17,14 @@ export default defineConfig({
   webServer: [
     {
       command: 'node qa/server.mjs',
-      url: 'http://127.0.0.1:5000/api/v1/health/live',
+      url: 'http://localhost:5000/api/v1/health/live',
       timeout: 180_000,
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'npx.cmd vite --host 127.0.0.1 --port 5173',
+      command: 'npx.cmd vite --host localhost --port 5173',
       cwd: './client',
-      url: 'http://127.0.0.1:5173',
+      url: 'http://localhost:5173',
       timeout: 120_000,
       reuseExistingServer: !process.env.CI,
     },

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Activity,
   CalendarDays,
+  ClipboardCheck,
   ClipboardList,
   Settings,
   ShieldCheck,
@@ -25,6 +26,13 @@ const SECTIONS = [
     icon: CalendarDays,
     title: 'Reservations',
     copy: 'Approve or decline table requests and keep the service team informed.',
+  },
+  {
+    to: '/admin/menu-review',
+    icon: ClipboardCheck,
+    title: 'Menu review',
+    copy: 'Resolve PDF review issues, correct menu data and publish verified items.',
+    roles: ['manager', 'admin'],
   },
   {
     to: '/admin/settings',

@@ -23,6 +23,7 @@ import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 import AdminOrders from './pages/admin/AdminOrders.jsx';
 import AdminReservations from './pages/admin/AdminReservations.jsx';
+import AdminMenuReview from './pages/admin/AdminMenuReview.jsx';
 import AdminSettings from './pages/admin/AdminSettings.jsx';
 import Forbidden from './pages/Forbidden.jsx';
 import NotFound from './pages/NotFound.jsx';
@@ -93,6 +94,14 @@ export function App() {
         <Route index element={<AdminHome />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="reservations" element={<AdminReservations />} />
+        <Route
+          path="menu-review"
+          element={
+            <RequireRole roles={['manager', 'admin']}>
+              <AdminMenuReview />
+            </RequireRole>
+          }
+        />
         <Route
           path="settings"
           element={

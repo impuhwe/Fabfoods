@@ -23,7 +23,10 @@ const CATEGORY_IMAGES = {
   milkshake: unsplash('photo-1572490122747-3968b75cc699'),
 };
 
+export const HIGH_PRIORITY_IMAGE_PROPS = Object.freeze({ fetchpriority: 'high' });
+
 export const HERO_IMAGE = unsplash('photo-1517248135467-4c7edcad34c4', 1600);
+export const FOOD_HERO_IMAGE = unsplash('photo-1504674900247-0877df9cc836', 1800);
 export const STORY_IMAGE = unsplash('photo-1414235077428-338989a2e8c0', 1200);
 export const COFFEE_IMAGE = unsplash('photo-1495474472287-4d71bcdd2085', 1200);
 export const RESERVATION_IMAGE = unsplash('photo-1559339352-11d035aa65de', 1400);

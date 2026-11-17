@@ -30,8 +30,10 @@ export const conflict = (message, code = 'CONFLICT') => new AppError(409, code, 
 export const tooManyRequests = (message = 'Too many requests, please try again later') =>
   new AppError(429, 'RATE_LIMITED', message);
 
-export const serviceUnavailable = (message = 'Service temporarily unavailable') =>
-  new AppError(503, 'SERVICE_UNAVAILABLE', message);
+export const serviceUnavailable = (
+  message = 'Service temporarily unavailable',
+  code = 'SERVICE_UNAVAILABLE',
+) => new AppError(503, code, message);
 
 export const internalError = (message = 'Something went wrong') =>
   new AppError(500, 'INTERNAL_ERROR', message);

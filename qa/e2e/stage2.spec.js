@@ -62,6 +62,14 @@ test.describe('public pages', () => {
     await expect(page.getByText(/Total/).first()).toBeVisible();
   });
 
+  test('menu shows an understandable empty state for an unmatched search', async ({ page }) => {
+    await page.goto('/menu');
+    await page.getByLabel('Search the menu').fill('zzzz-no-such-dish');
+
+    await expect(page.getByText('Nothing matched that search')).toBeVisible();
+    await expect(page.getByText('Try a different dish, category or search term.')).toBeVisible();
+  });
+
   test('reservation request is saved and explicitly not confirmed', async ({ page }) => {
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(
       new Date(),

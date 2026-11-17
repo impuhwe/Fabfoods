@@ -2,7 +2,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 
 process.env.NODE_ENV = 'test';
 process.env.PORT = '5000';
-process.env.CLIENT_ORIGIN = 'http://127.0.0.1:5173';
+process.env.CLIENT_ORIGIN = 'http://localhost:5173';
 process.env.ACCESS_TOKEN_SECRET = 'qa-access-secret-0123456789abcdef0123456789';
 process.env.REFRESH_TOKEN_PEPPER = 'qa-refresh-pepper-0123456789abcdef0123456789';
 process.env.ACCESS_TOKEN_TTL = '15m';
@@ -22,12 +22,36 @@ process.env.MONGODB_URI = mongo.getUri('fabs_qa');
 const bcrypt = await import('bcrypt');
 const { connectToDatabase } = await import('../server/src/config/db.js');
 const { seedMenu } = await import('../server/scripts/seedMenu.js');
+const { default: MenuItem } = await import('../server/src/models/MenuItem.js');
 const { default: User } = await import('../server/src/models/User.js');
 const { default: RestaurantSettings } = await import('../server/src/models/RestaurantSettings.js');
 const { default: app } = await import('../server/src/app.js');
 
 await connectToDatabase();
-await seedMenu({ allowUnverified: true, reset: true });
+await seedMenu({ allowUnverified: true });
+await MenuItem.updateMany(
+  {},
+  {
+    $set: {
+      verified: true,
+      needsReview: false,
+      reviewStatus: 'verified',
+      isAvailable: true,
+      hasUnresolvedBlockingIssues: false,
+    },
+  },
+);
+await MenuItem.updateOne(
+  { slug: 'continental-breakfast' },
+  {
+    $set: {
+      verified: false,
+      needsReview: true,
+      reviewStatus: 'needs-review',
+      isAvailable: false,
+    },
+  },
+);
 
 await User.create({
   name: 'QA Admin',
@@ -43,8 +67,8 @@ await RestaurantSettings.create({
   },
 });
 
-const server = app.listen(5000, '127.0.0.1', () => {
-  console.log('QA API listening on http://127.0.0.1:5000');
+const server = app.listen(5000, () => {
+  console.log('QA API listening on http://localhost:5000');
 });
 
 async function shutdown() {

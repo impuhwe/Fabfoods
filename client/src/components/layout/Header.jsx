@@ -7,20 +7,17 @@ import { cn } from '../../lib/cn.js';
 import { NAV_LINKS } from '../../lib/site.js';
 import IconButton from '../ui/IconButton.jsx';
 import Drawer from '../ui/Drawer.jsx';
+import BrandLogo from './BrandLogo.jsx';
 
 function Wordmark({ onNavigate }) {
   return (
     <Link
       to="/"
       onClick={onNavigate}
-      className="group inline-flex items-baseline gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember-400 focus-visible:ring-offset-4"
+      className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember-400 focus-visible:ring-offset-4"
+      aria-label="FAB FOODS home"
     >
-      <span className="font-display text-xl font-semibold tracking-[-0.03em] text-cocoa-950">
-        FAB FOODS
-      </span>
-      <span className="hidden text-[9px] font-semibold uppercase tracking-[0.28em] text-cocoa-500 sm:inline">
-        Kigali
-      </span>
+      <BrandLogo compact />
     </Link>
   );
 }
@@ -91,7 +88,7 @@ export function Header() {
             to="/menu"
             className="ml-1 hidden h-10 items-center rounded-full bg-ember-500 px-5 text-sm font-semibold text-cocoa-950 transition-colors hover:bg-ember-400 sm:inline-flex"
           >
-            Browse menu
+            Order now
           </Link>
 
           <div className="lg:hidden">
@@ -126,7 +123,7 @@ export function Header() {
             onClick={() => setOpen(false)}
             className="inline-flex h-12 items-center justify-center rounded-full bg-ember-500 text-sm font-semibold text-cocoa-950"
           >
-            Browse menu
+            Order now
           </Link>
           <Link
             to={user ? '/account' : '/login'}

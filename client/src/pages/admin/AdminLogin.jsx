@@ -7,6 +7,7 @@ import { Field } from '../../components/ui/Field.jsx';
 import Input from '../../components/ui/Input.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { FullPageSpinner } from '../../components/ui/Spinner.jsx';
+import BrandLogo from '../../components/layout/BrandLogo.jsx';
 
 export function AdminLogin() {
   const { user, status, login } = useAuth();
@@ -59,8 +60,8 @@ export function AdminLogin() {
           className="absolute -left-16 bottom-10 h-64 w-64 rounded-full bg-ember-500/20 blur-3xl"
           aria-hidden="true"
         />
-        <Link to="/" className="relative font-display text-lg font-semibold tracking-tight">
-          FAB FOODS
+        <Link to="/" className="relative inline-flex" aria-label="FAB FOODS home">
+          <BrandLogo onDark compact />
         </Link>
         <div className="relative">
           <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-cream-100/50">
@@ -88,6 +89,7 @@ export function AdminLogin() {
           </Link>
 
           <div className="mt-8 rounded-3xl border border-cocoa-900/10 bg-cream-50 p-6 shadow-soft sm:p-8">
+            <BrandLogo className="mb-5" compact />
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-cream-200 text-cocoa-700">
               <LockKeyhole className="h-5 w-5" aria-hidden="true" />
             </span>

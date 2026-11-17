@@ -11,6 +11,7 @@ import usePageMeta from '../../hooks/usePageMeta.js';
 import { useCart } from '../../contexts/CartContext.jsx';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { formatRwf } from '../../lib/format.js';
+import { getApiErrorMessage } from '../../lib/api.js';
 import { menuItemImage } from '../../lib/imagery.js';
 import { getMenuItem, getMenuItems } from '../../services/publicApi.js';
 
@@ -100,8 +101,8 @@ export function MenuItemPage() {
             .catch(() => undefined);
         }
       })
-      .catch(() => {
-        if (active) setError('This menu item could not be loaded.');
+      .catch((error) => {
+        if (active) setError(getApiErrorMessage(error, 'This menu item could not be loaded.'));
       })
       .finally(() => {
         if (active) setLoading(false);

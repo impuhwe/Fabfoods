@@ -9,6 +9,23 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', (_error, _request, response) => {
+            if (response.writableEnded) return;
+            response.statusCode = 503;
+            response.setHeader('Content-Type', 'application/json');
+            response.end(
+              JSON.stringify({
+                success: false,
+                error: {
+                  code: 'API_UNAVAILABLE',
+                  message:
+                    'The API server is not reachable. Start the backend and check MongoDB connectivity.',
+                },
+              }),
+            );
+          });
+        },
       },
     },
   },

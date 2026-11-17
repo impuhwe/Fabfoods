@@ -11,7 +11,7 @@ import usePageMeta from '../../hooks/usePageMeta.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { getApiErrorMessage } from '../../lib/api.js';
 import { OCCASIONS } from '../../lib/site.js';
-import { RESERVATION_IMAGE } from '../../lib/imagery.js';
+import { HIGH_PRIORITY_IMAGE_PROPS, RESERVATION_IMAGE } from '../../lib/imagery.js';
 import { reservationFormSchema } from '../../lib/validation.js';
 import { requestReservation } from '../../services/publicApi.js';
 
@@ -149,7 +149,7 @@ export function ReservationsPage() {
           <img
             src={RESERVATION_IMAGE}
             alt="Restaurant table set for service"
-            fetchPriority="high"
+            {...HIGH_PRIORITY_IMAGE_PROPS}
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover opacity-40"
           />

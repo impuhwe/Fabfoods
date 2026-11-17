@@ -6,6 +6,7 @@ import MenuItem from '../src/models/MenuItem.js';
 import Reservation from '../src/models/Reservation.js';
 import { seedMenu } from '../scripts/seedMenu.js';
 import { startTestDatabase, stopTestDatabase } from './helpers/db.js';
+import { publishSeededMenu } from './helpers/menu.js';
 import { API, fetchCsrf, getWithAuth, postWithCsrf, registerUser } from './helpers/auth.js';
 
 function kigaliDate(offsetDays = 0) {
@@ -17,6 +18,7 @@ function kigaliDate(offsetDays = 0) {
 beforeAll(async () => {
   await startTestDatabase();
   await seedMenu({ allowUnverified: true });
+  await publishSeededMenu();
 });
 
 afterAll(async () => {
@@ -45,7 +47,7 @@ describe('public menu API', () => {
 
     expect(data.totalItems).toBe(111);
     expect(data.categories).toHaveLength(19);
-    expect(data.orderabilityNotice).toMatch(/awaiting confirmation/i);
+    expect(data.orderabilityNotice).toMatch(/staff-verified/i);
     expect(JSON.stringify(response.body)).not.toContain('needsReview');
     expect(JSON.stringify(response.body)).not.toContain('sourcePage');
   });
@@ -106,7 +108,7 @@ describe('public menu API', () => {
 
     const avocado = await request(app).get(`${API}/menu/items/avocado-salad`).expect(200);
     expect(avocado.body.data.item.isOrderable).toBe(false);
-    expect(avocado.body.data.item.orderabilityNote).toMatch(/owner confirmation/i);
+    expect(avocado.body.data.item.orderabilityNote).toMatch(/staff verification/i);
   });
 
   it('returns a clean 404 for unknown items and categories', async () => {
@@ -178,15 +180,52 @@ describe('server-authoritative order quote', () => {
     expect(quote.fulfillment).toMatchObject({ type: 'delivery', available: false, fee: null });
   });
 
-  it('rejects items awaiting owner confirmation', async () => {
-    const response = await postWithCsrf(
+  it('rejects items awaiting staff verification or review resolution', async () => {
+    const blockedByTags = await postWithCsrf(
       '/orders/quote',
       { items: [{ slug: 'avocado-salad', quantity: 1 }] },
       csrfTokens,
     ).expect(409);
 
-    expect(response.body.error.code).toBe('ITEM_NOT_ORDERABLE');
-    expect(response.body.error.message).toMatch(/awaiting owner confirmation/i);
+    expect(blockedByTags.body.error.code).toBe('ITEM_NOT_ORDERABLE');
+
+    await MenuItem.updateOne(
+      { slug: 'french-fries' },
+      { $set: { verified: false, needsReview: true } },
+    );
+    try {
+      const unverified = await postWithCsrf(
+        '/orders/quote',
+        { items: [{ slug: 'french-fries', quantity: 1 }] },
+        csrfTokens,
+      ).expect(409);
+      expect(unverified.body.error.code).toBe('ITEM_NOT_VERIFIED');
+      expect(unverified.body.error.message).toMatch(/not been verified/i);
+    } finally {
+      await MenuItem.updateOne(
+        { slug: 'french-fries' },
+        { $set: { verified: true, needsReview: false } },
+      );
+    }
+
+    await MenuItem.updateOne(
+      { slug: 'french-fries' },
+      { $set: { hasUnresolvedBlockingIssues: true } },
+    );
+    try {
+      const unresolved = await postWithCsrf(
+        '/orders/quote',
+        { items: [{ slug: 'french-fries', quantity: 1 }] },
+        csrfTokens,
+      ).expect(409);
+      expect(unresolved.body.error.code).toBe('ITEM_REVIEW_REQUIRED');
+      expect(unresolved.body.error.message).toMatch(/unresolved review issue/i);
+    } finally {
+      await MenuItem.updateOne(
+        { slug: 'french-fries' },
+        { $set: { hasUnresolvedBlockingIssues: false } },
+      );
+    }
   });
 
   it('rejects invalid selections, client prices and unavailable items', async () => {

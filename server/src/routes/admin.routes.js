@@ -4,18 +4,32 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { sendSuccess } from '../utils/response.js';
 import {
+  archiveMenuItem,
   emails,
+  menuCategories,
+  menuItems,
+  menuReviewIssues,
   order,
   orders,
   processEmails,
   reservations,
+  resolveMenuIssue,
+  restoreMenuItem,
   retryEmail,
   settings,
   update,
+  updateMenuItem,
   updateOrderPayment,
   updateOrderStatus,
   updateReservationStatus,
+  verifyMenuItem,
 } from '../controllers/admin.controller.js';
+import {
+  adminMenuItemUpdateSchema,
+  adminMenuQuerySchema,
+  resolveReviewIssueSchema,
+  verifyMenuItemSchema,
+} from '../validators/adminMenu.validator.js';
 import {
   adminEmailQuerySchema,
   adminOrderPaymentSchema,
@@ -67,6 +81,51 @@ router.patch(
 router.get('/emails', validate(adminEmailQuerySchema, 'query'), emails);
 router.post('/emails/process', processEmails);
 router.post('/emails/:id/retry', retryEmail);
+
+router.get(
+  '/menu/items',
+  requireRole(ROLES.MANAGER, ROLES.ADMIN),
+  validate(adminMenuQuerySchema, 'query'),
+  menuItems,
+);
+router.get(
+  '/menu/categories',
+  requireRole(ROLES.MANAGER, ROLES.ADMIN),
+  menuCategories,
+);
+router.get(
+  '/menu/review-issues',
+  requireRole(ROLES.MANAGER, ROLES.ADMIN),
+  menuReviewIssues,
+);
+router.patch(
+  '/menu/items/:id',
+  requireRole(ROLES.MANAGER, ROLES.ADMIN),
+  validate(adminMenuItemUpdateSchema),
+  updateMenuItem,
+);
+router.post(
+  '/menu/items/:id/verify',
+  requireRole(ROLES.MANAGER, ROLES.ADMIN),
+  validate(verifyMenuItemSchema),
+  verifyMenuItem,
+);
+router.post(
+  '/menu/items/:id/archive',
+  requireRole(ROLES.MANAGER, ROLES.ADMIN),
+  archiveMenuItem,
+);
+router.post(
+  '/menu/items/:id/restore',
+  requireRole(ROLES.MANAGER, ROLES.ADMIN),
+  restoreMenuItem,
+);
+router.post(
+  '/menu/review-issues/:id/resolve',
+  requireRole(ROLES.MANAGER, ROLES.ADMIN),
+  validate(resolveReviewIssueSchema),
+  resolveMenuIssue,
+);
 
 router.get('/settings', requireRole(ROLES.MANAGER, ROLES.ADMIN), settings);
 router.patch(

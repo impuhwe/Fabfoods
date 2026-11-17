@@ -1,3 +1,4 @@
+import { MENU_REVIEW_ISSUE_LINKS } from '../scripts/data/menuReviewLinks.js';
 import { validateMenuManifest } from '../validators/menu.validator.js';
 
 function appendReviewNote(existing, note) {
@@ -88,12 +89,13 @@ export function buildMenuSeedData(manifest) {
       gallery: [],
       ingredients: [],
       allergens: [],
-      isAvailable: true,
+      isAvailable: false,
       isFeatured: false,
       isPopular: false,
       isArchived: false,
       needsReview: line.needsReview,
       verified: line.verified,
+      reviewStatus: line.reviewStatus,
       reviewNote: reviewNoteFrom(line),
       reviewTags: [...line.reviewTags],
       dataSource: line.dataSource,
@@ -169,9 +171,33 @@ export function buildMenuSeedData(manifest) {
     item.servingOptions.flatMap((group) => group.options),
   );
 
+  const reviewIssues = data.reviewList.map((line) => {
+    const link = MENU_REVIEW_ISSUE_LINKS[line.id] ?? {};
+    const affectedCategorySlugs = new Set(link.affectedCategorySlugs ?? []);
+
+    for (const kind of link.affectedCategoryKinds ?? []) {
+      for (const category of data.categories) {
+        if (category.kind === kind) affectedCategorySlugs.add(category.slug);
+      }
+    }
+
+    return {
+      issueId: line.id,
+      sourcePdf: line.sourcePdf,
+      sourcePage: line.sourcePage,
+      item: line.item,
+      issue: line.issue,
+      handling: line.handling,
+      affectedSlugs: link.affectedSlugs ?? [],
+      affectedCategorySlugs: [...affectedCategorySlugs],
+      blocking: true,
+    };
+  });
+
   return {
     categories,
     items,
+    reviewIssues,
     summary: {
       sourceDocuments: data.sourceDocuments.length,
       categories: categories.length,
@@ -190,6 +216,7 @@ export function buildMenuSeedData(manifest) {
       pricedLines: data.counts.combined.pricedLines,
       modeledRecords: data.counts.combined.modeledRecords,
       reviewFlags: data.reviewList.length,
+      reviewIssues: reviewIssues.length,
     },
   };
 }

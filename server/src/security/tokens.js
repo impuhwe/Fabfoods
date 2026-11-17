@@ -31,6 +31,9 @@ export function createRefreshToken() {
 }
 
 export function hashRefreshToken(token) {
+  if (typeof token !== 'string' || token.length === 0) {
+    throw new TypeError('Refresh token must be a non-empty string');
+  }
   return createHmac('sha256', env.REFRESH_TOKEN_PEPPER).update(token).digest('hex');
 }
 
