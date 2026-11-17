@@ -16,6 +16,10 @@ async function expectNoHorizontalOverflow(page) {
 }
 
 test.describe('public pages', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route(/https:\/\/images\.unsplash\.com\//, (route) => route.abort());
+  });
+
   for (const viewport of [
     { name: 'mobile', width: 390, height: 844 },
     { name: 'tablet', width: 768, height: 1024 },
@@ -47,14 +51,14 @@ test.describe('public pages', () => {
     });
 
     await page.getByRole('link', { name: 'French Fries' }).first().click();
-    await expect(page.getByRole('heading', { name: 'French Fries' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'FRENCH FRIES', exact: true })).toBeVisible();
     await page.getByRole('button', { name: /Add to order/ }).click();
 
     await expect(page.getByRole('heading', { name: 'Your order' })).toBeVisible();
     await page.getByRole('link', { name: 'Review checkout' }).click();
 
     await expect(page.getByRole('heading', { name: 'Finish your order.' })).toBeVisible();
-    await expect(page.getByText('Order summary')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Order summary' })).toBeVisible();
     await expect(page.getByText(/Total/).first()).toBeVisible();
   });
 

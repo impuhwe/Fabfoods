@@ -1,6 +1,6 @@
 # FAB FOODS — Database Design
 
-MongoDB Atlas + Mongoose. Status: Phase 0 proposal, updated for Phase 2 Stage 2.
+MongoDB Atlas + Mongoose. Status: Phase 0 proposal, updated for Phase 2 Stage 3.
 
 ## 0. Implemented in Phase 2 Stage 2
 
@@ -12,9 +12,32 @@ Collections that exist and are exercised by tests:
 - `reservations` — website table requests, status starts at `pending`.
 - `contactmessages` — website contact messages saved for staff review.
 
-Collections below that are marked **planned** (orders, payments, settings, gallery,
-promotions, reviews, email/audit logs) are not created by Stage 2. No online order or payment
-record is written by the public site.
+## 0.1 Implemented in Phase 2 Stage 3
+
+Stage 3 adds these actual collections and fields. Sections below remain design targets where they
+describe capabilities not yet built (zones CRUD, webhook-event collection, audit logs, uploads,
+promotions, reviews, gallery).
+
+- `orders` — `orderNumber`, optional `user`, `customer {name,email,phone}`, `fulfillmentType`,
+  `deliveryAddress`, `notes`, immutable `items` snapshots, `subtotal`, `deliveryFee`, `total`,
+  `currency`, `paymentMethod`, `paymentStatus`, `status`, `statusHistory`, `idempotencyKey`,
+  `source`, `confirmedAt`, `cancelledAt`. Offline orders start `confirmed` with payment `pending`;
+  online orders start `pending_payment` until verified. Public order numbers use
+  `FF-YYMMDD-XXXXXX`.
+- `paymenttransactions` — one row per provider payment attempt: `order`, `provider`, `method`,
+  `status`, `amount`, `currency`, `providerReference`, `providerTransactionId`, `checkoutUrl`,
+  `verifiedAt`, `failureReason`, `webhookEventIds[]`.
+- `emailoutbox` — durable queued mail: `to`, `template`, `subject`, `payload`, `status`,
+  `attempts`, `maxAttempts`, `nextAttemptAt`, `sentAt`, `providerMessageId`, `lastError`,
+  `dedupeKey`, optional `user`, `order`, `reservation`. Delivery is disabled by default.
+- `restaurantsettings` — singleton (`singleton: "default"`) with `contact`, `hours`, `fulfillment`
+  (including `deliveryZones`), `reservations`, `payments` and `verification` approval flags.
+  Public settings hide unapproved contact/hours/zones and online methods without a configured,
+  approved provider.
+
+Stage 3 does not write a separate payment webhook-event collection; provider event ids are stored
+on the matching `PaymentTransaction` for deduplication. No online order or payment is created while
+`PAYMENT_PROVIDER=disabled`, which is the default.
 
 ---
 
@@ -151,7 +174,10 @@ Rules: `menuPricing.service.js` is the single source for order pricing. It uses 
 items remain resolvable by id but cannot be ordered. `needsReview` is never exposed on the public
 API.
 
-### 3.5 `orders` (planned; not implemented in Stage 2)
+### 3.5 `orders` (implemented in Stage 3; target design below)
+
+The actual Stage 3 subset is listed in §0.1. The table below is the longer-term target and includes
+fields not yet built, such as scheduled fulfilment, promotions and guest lookup tokens.
 
 | Field | Type | Rules |
 | --- | --- | --- |
@@ -161,9 +187,9 @@ API.
 | `fulfillment` | Subdoc | `{type: pickup\|delivery, zone?, zoneName?, zoneFee?, address?, instructions?, scheduledFor?}` |
 | `items` | Subdoc[] | see below |
 | `pricing` | Subdoc | `{subtotal, deliveryFee, discount, total, currency:"RWF"}` |
-| `payment` | Subdoc | `{method: cash_on_delivery\|pay_at_restaurant\|mobile_money\|card, status: unpaid\|requires_action\|processing\|paid\|failed\|refunded\|partially_refunded\|cancelled, amountPaid, amountRefunded, provider, providerReference, paidAt, verifiedVia: webhook\|manual\|provider_verify, note}` |
+| `payment` | Subdoc | Target: `{method: cash_on_delivery\|pay_at_restaurant\|mobile_money\|bank_card, status: pending\|requires_action\|processing\|paid\|failed\|refunded\|partially_refunded\|cancelled, amountPaid, amountRefunded, provider, providerReference, paidAt, verifiedVia: webhook\|manual\|provider_verify, note}`. Stage 3 stores `paymentMethod`/`paymentStatus` as top-level fields. |
 | `promotion` | ObjectId → Promotion | optional |
-| `status` | String | `pending` · `confirmed` · `preparing` · `ready` · `out_for_delivery` · `completed` · `cancelled` |
+| `status` | String | `pending_payment` · `confirmed` · `preparing` · `ready` · `out_for_delivery` · `completed` · `cancelled` |
 | `statusHistory` | Subdoc[] | `{status, at, by, note}` |
 | `cancellation` | Subdoc | `{reason, by, at}` |
 | `lookupTokenHash` | String | guest tracking (order no. + email also works) |
@@ -185,9 +211,10 @@ Invariants:
 - `payment.amountPaid` and `amountRefunded` are derived from verified transactions, never typed in
   ad hoc; manual settlement requires a note, actor and audit entry.
 
-### 3.5.1 `paymenttransactions`
+### 3.5.1 `paymenttransactions` (implemented subset in Stage 3)
 
-One row per payment attempt (Mobile Money prompt, card session, cash settlement, refund).
+Actual Stage 3 fields are listed in §0.1. One row per provider payment attempt; offline settlement is
+recorded on the order, not as a provider transaction.
 
 | Field | Type | Rules |
 | --- | --- | --- |
@@ -217,7 +244,10 @@ Invariants:
 - Sum of successful transactions minus refunds must equal `order.payment.amountPaid`.
 - No raw card number, CVV or full provider payload containing card data is ever stored.
 
-### 3.5.2 `paymentwebhookevents`
+### 3.5.2 `paymentwebhookevents` (design only; not implemented)
+
+Stage 3 stores provider event ids in `paymenttransactions.webhookEventIds` for replay protection
+instead of a separate collection.
 
 | Field | Type | Rules |
 | --- | --- | --- |
@@ -295,7 +325,11 @@ Invariant: nothing is published without approval; imported reviews require a sou
 (`interior|food|coffee|team|events`), `isPublished`, `displayOrder`, `tags[]`.
 Indexes: `{isPublished: 1, category: 1, displayOrder: 1}`.
 
-### 3.10 `restaurantsettings` (singleton, `key: "global"`)
+### 3.10 `restaurantsettings` (singleton)
+
+Stage 3 implements the singleton with `singleton: "default"` and the subset described in §0.1:
+`contact`, `hours`, `fulfillment` (including `deliveryZones`), `reservations`, `payments` and
+`verification` booleans. The fuller shape below remains the design target.
 
 ```
 brand       { name, legalName, slogan, logo: Media, favicon: Media }
@@ -339,12 +373,14 @@ stored, editable and visible to admins, but never rendered on the public site. T
 neutral "details being confirmed" state instead. Production launch checklist requires all three
 approvals.
 
-### 3.11 `emaillogs`
+### 3.11 `emailoutbox`
 
-`to`, `template` (`welcome|reset|order_placed|order_confirmed|order_status|payment_receipt|
-|payment_failed|reservation_*|contact_reply|test`), `payload` (sanitised), `status`
-(`queued|sending|sent|failed`), `attempts` (max 5), `providerMessageId`, `lastError`,
-`related: {model, id}`, `sentAt`.
+Stage 3 implements this collection as `emailoutbox` (see §0.1), with explicit `user`, `order` and
+`reservation` references, `dedupeKey`, retry delays and a delivery-disabled default. The design
+target fields below are otherwise compatible.
+
+`to`, `template`, `subject`, `payload` (sanitised), `status` (`queued|sending|sent|failed`),
+`attempts` (max 5), `providerMessageId`, `lastError`, `related: {model, id}`, `sentAt`.
 Indexes: `{status: 1, createdAt: 1}`, `{related.model: 1, related.id: 1}`, `{createdAt: -1}`.
 Outbox: written inside the same operation as the business write; a worker drains `queued`.
 
@@ -361,7 +397,7 @@ No passwords, tokens or full customer PII in digests.
 
 | From \ To | confirmed | preparing | ready | out_for_delivery | completed | cancelled |
 | --- | --- | --- | --- | --- | --- | --- |
-| pending | ✅ | — | — | — | — | ✅ |
+| pending_payment | ✅ | — | — | — | — | ✅ |
 | confirmed | — | ✅ | — | — | — | ✅ |
 | preparing | — | — | ✅ | — | — | ✅ |
 | ready | — | — | — | ✅ (delivery) | ✅ (pickup) | ✅ |
@@ -373,14 +409,15 @@ Any non-listed transition returns `409 INVALID_TRANSITION`. Reverting requires a
 audit note.
 
 Reservation matrix: `pending → confirmed|declined|cancelled`; `confirmed → completed|cancelled|no_show`;
-terminal: `completed|declined|cancelled|no_show`. Stage 2 only creates `pending` requests; no admin
-transition endpoint exists yet.
+terminal: `completed|declined|cancelled|no_show`. Website creation always starts `pending`; staff
+transitions are implemented through `PATCH /admin/reservations/:id/status`, and customer
+cancellation through `POST /reservations/:reference/cancel`.
 
 Payment matrix (order-level `payment.status`):
 
 | From \ To | requires_action | processing | paid | failed | refunded | cancelled |
 | --- | --- | --- | --- | --- | --- | --- |
-| unpaid | ✅ (online) | — | ✅ (manual, cash) | — | — | ✅ |
+| pending | ✅ (online) | — | ✅ (manual, offline) | — | — | ✅ |
 | requires_action | — | ✅ | ✅ | ✅ | — | ✅ |
 | processing | — | — | ✅ | ✅ | — | — |
 | paid | — | — | — | — | ✅ (refund) | — |
@@ -388,8 +425,10 @@ Payment matrix (order-level `payment.status`):
 | refunded | — | — | — | — | — | — |
 | cancelled | — | — | — | — | — | — |
 
-`paid` requires `verifiedVia: webhook | provider_verify | manual`; `manual` is manager+ only,
-requires a note, and is audit-logged. `amountPaid` cannot exceed the order total.
+`paid` requires verified server-side evidence. Offline `pending|paid|cancelled` reconciliation is
+available to staff through `PATCH /admin/orders/:id/payment`; online orders cannot be marked paid
+manually and must be verified by the provider. Notes and status history are recorded. Full refund
+and audit-log workflows remain planned.
 
 ---
 

@@ -1,15 +1,17 @@
 # FAB FOODS — Screen Inventory
 
-Status: Phase 0 proposal, with the Phase 2 Stage 2 implemented subset noted below. 45 screens
-(27 public/customer, 18 admin) remain the target inventory.
+Status: Phase 0 proposal, with the Phase 2 Stage 2 and Stage 3 implemented subsets noted below.
+45 screens (27 public/customer, 18 admin) remain the target inventory.
 Legend: **Auth** = G guest · C customer · S staff · M manager · A admin.
 
 Stage 2 implemented public/customer routes: P-01 Home, P-02 Menu, P-03 Dish detail, P-04 About,
-P-05 Gallery, P-06 Reservations, P-07 Contact, P-08 Cart, P-09 Checkout foundation, P-12 Login,
-P-13 Register, P-14 Forgot password, P-15 Reset notice, P-16 Verify notice, P-17 Account overview,
-P-22 Not found. P-09 stops before order placement; payment handoff/return, order confirmation,
-tracking, account profile/orders, and legal pages are not implemented. Rows below describe the
-target surface; unimplemented states are planned.
+P-05 Gallery, P-06 Reservations, P-07 Contact, P-08 Cart, P-09 Checkout, P-12 Login, P-13 Register,
+P-14 Forgot password, P-15 Reset notice, P-16 Verify notice, P-17 Account hub, P-22 Not found.
+Stage 3 adds server-priced order placement at P-09, order confirmation/status at P-10, profile,
+password, order history and reservation cancellation inside P-17, and staff A-07 Orders,
+A-09 Reservations and A-16 Settings. Standalone `/account/*` subpages, delivery operations, online
+payment handoff/return, live tracking lookup and legal pages remain planned. Rows below describe
+the target surface; unimplemented states are planned.
 
 ---
 
@@ -25,21 +27,21 @@ target surface; unimplemented states are planned.
 | P-06 | Reservations | `/reservations` | G | Request a table | Intro, request form (name, email, phone, date, time, guests, requests), "request not confirmed" notice, pending reference panel; no availability or capacity claim | validation errors, submitting, success with `pending` status, server error |
 | P-07 | Contact | `/contact` | G | Reach the restaurant | Contact form plus a neutral "details being confirmed" block; no unapproved address/phone/email, hours, map, WhatsApp or socials | form errors, submitting, saved-message success, server error |
 | P-08 | Cart | `/cart` | G | Review basket | Line items, add-on summary, qty steppers, remove/clear, subtotal estimate, checkout CTA | empty cart, quantity cap |
-| P-09 | Checkout foundation | `/checkout` | G/C | Review fulfilment and price | Pickup/delivery choice, contact/address fields, server quote, quote summary, delivery-unavailable and payment-pending panels; order placement disabled | validation, quote loading/error, delivery unavailable, online payment pending |
-| P-09a | Payment handoff | `/checkout/payment/:reference` | G/C | Handle MoMo prompt or card redirect | Method-specific instructions, countdown/expiry, "I've paid, check status" polling, cancel | awaiting customer, processing, failed, expired, provider unavailable |
-| P-09b | Payment return | `/payments/return/:reference` | G/C | Provider redirect landing | Server re-verification spinner, resolves to confirmation or retry | verifying, success, failed, already-processed |
-| P-10 | Order confirmation | `/order/:orderNumber` | G | Post-purchase + tracking entry | Order number, payment state (separate from order state), status timeline, items, totals, next steps, track link, WhatsApp share | not-found, guest email gate, payment pending |
+| P-09 | Checkout | `/checkout` | G/C | Review fulfilment and place an order | Pickup/delivery choice, contact/address fields, server quote, payment method selection, idempotent order placement, delivery-unavailable and payment-pending panels | validation, quote loading/error, delivery unavailable, offline order placed, online payment pending |
+| P-09a | Payment handoff | `/checkout/payment/:reference` | G/C | Handle MoMo prompt or card redirect | **Planned.** Method-specific instructions, countdown/expiry, "I've paid, check status" polling, cancel | awaiting customer, processing, failed, expired, provider unavailable |
+| P-09b | Payment return | `/payments/return/:reference` | G/C | Provider redirect landing | **Planned.** Server re-verification spinner, resolves to confirmation or retry | verifying, success, failed, already-processed |
+| P-10 | Order confirmation/status | `/order/:orderNumber` | G/C | Post-purchase + status timeline | **Implemented.** Order number, payment state (separate from order state), status timeline, items, totals, guest email gate, payment re-check, cancellation | not-found, guest email gate, payment pending, cancelled |
 | P-11 | Order tracking | `/track` | G | Look up order | Form (order no. + email/phone), then status timeline | lookup error, expired, loading |
 | P-12 | Login | `/login` | G | Sign in | Email/password, remember me, forgot link, register link | invalid credentials, lockout/rate-limit message |
 | P-13 | Register | `/register` | G | Create account | Name, email, phone, password, confirm, terms checkbox | field errors, email exists, weak password |
 | P-14 | Forgot password | `/forgot-password` | G | Request reset | Email field | neutral success (never reveals account existence) |
 | P-15 | Reset notice | `/reset-password` | G | Explain pending reset delivery | Honest notice that email reset links are not connected yet, link back to sign in | - |
 | P-16 | Verify notice | `/verify-email` | G | Explain pending verification delivery | Honest notice that email verification is not connected yet, link back to sign in | - |
-| P-17 | Account overview | `/account` | C | Profile hub | Profile summary, sign out, signed-in reservation history with statuses, honest order-history-pending panel | loading, reservation error, empty history |
-| P-18 | Profile | `/account/profile` | C | Edit details | Name, phone, marketing opt-in, change password, sign out all sessions | saving, success, server error |
-| P-19 | My orders | `/account/orders` | C | History | Filterable order list, status badges, pagination | empty, loading |
-| P-20 | Order detail (account) | `/account/orders/:id` | C | Reorder + track | Items, totals, status timeline, reorder button | not-found (ownership), cancelled |
-| P-21 | My reservations | `/account/reservations` | C | History (planned; overview delivered at `/account`) | List with status, cancel action (if pending/confirmed) | empty, cancel confirm |
+| P-17 | Account hub | `/account` | C | Profile and history hub | **Implemented.** Profile editing, password change, order history, signed-in reservation history with cancellation, sign out | loading, empty history, save error, cancel confirm |
+| P-18 | Profile | `/account/profile` | C | Edit details | Planned standalone route; editing is delivered inside P-17 | saving, success, server error |
+| P-19 | My orders | `/account/orders` | C | History | Planned standalone route; history is delivered inside P-17 | empty, loading |
+| P-20 | Order detail (account) | `/account/orders/:id` | C | Reorder + track | Planned standalone route; order status is delivered at `/order/:orderNumber` | not-found (ownership), cancelled |
+| P-21 | My reservations | `/account/reservations` | C | History | Planned standalone route; history and cancellation are delivered inside P-17 | empty, cancel confirm |
 | P-22 | Not found | `*` | G | 404 | Editorial 404, links home/menu | — |
 | P-23 | Server error | error boundary | G | 500 | Recovery UI, retry | — |
 | P-24 | Privacy policy | `/privacy` | G | Legal | Rendered content | content pending (Q17) |
@@ -62,18 +64,18 @@ Admin base path `/admin`, own layout (sidebar + topbar), role-gated, no public f
 | A-04 | Create item | `/admin/menu/new` | M+ | Add dish | Form (name, slug auto, category, price, description, image upload, availability, featured, add-ons builder, display order) | validation, upload progress, draft saved |
 | A-05 | Edit item | `/admin/menu/:id` | M+ | Update dish | Same form + metadata (source ref, needs-review flag), archive/restore, delete (admin only) | not-found, dirty-state guard |
 | A-06 | Categories | `/admin/menu/categories` | M+ | Structure the menu | List, reorder (drag), visibility toggle, create/edit drawer, kind (food/drink) | empty, duplicate slug, in-use delete blocked |
-| A-07 | Orders | `/admin/orders` | S+ | Fulfilment queue | Tabs by status, search (number/name/phone), date range, table, bulk status, CSV export | empty, loading, stale-data refresh |
-| A-08 | Order detail | `/admin/orders/:id` | S+ | Process an order | Customer block, items + add-ons + notes, totals, fulfillment/zone snapshot, payment block (separate state), status control (allowed transitions only), timeline, cancel with reason, print | not-found, transition rejected, unpaid/paid mismatch warning |
+| A-07 | Orders | `/admin/orders` | S+ | Fulfilment queue | **Implemented.** Status filter, table, order detail drawer, status actions and offline payment recording; search/date range/bulk/CSV remain planned | empty, loading, transition rejected |
+| A-08 | Order detail | `/admin/orders/:id` | S+ | Process an order | **Implemented in the orders screen.** Customer, items, totals, payment state, allowed status transitions and history; print/refunds remain planned | not-found, transition rejected, online payment not verified |
 | A-08a | Payments | `/admin/payments` | S+ | Transaction ledger | Filters (status/method/provider/date), transaction table, reconciliation totals, manual settlement, provider health strip | empty, loading, provider unconfigured |
 | A-08b | Payment detail | `/admin/payments/:id` | S+ | Investigate a payment | Transaction fields, webhook events, signature status, order link, refunds, audit trail | not-found, refund overrun blocked |
-| A-09 | Reservations | `/admin/reservations` | S+ | Manage requests | Date/status filters, same-slot count hint, table, accept/reject quick actions, CSV export | empty, loading, capacity warning |
-| A-10 | Reservation detail | `/admin/reservations/:id` | S+ | Handle a booking | Guest details, notes, reschedule, status control, email log for this reservation | not-found, transition rejected |
+| A-09 | Reservations | `/admin/reservations` | S+ | Manage requests | **Implemented.** Date/status filters, table, confirm/decline/complete/no-show actions and history; capacity hints and CSV remain planned | empty, loading, transition rejected |
+| A-10 | Reservation detail | `/admin/reservations/:id` | S+ | Handle a booking | **Implemented in the reservations screen.** Guest details, notes, status history; reschedule and email log remain planned | not-found, transition rejected |
 | A-11 | Customers | `/admin/customers` | M+ | Customer directory | Search, registered date, order count, spend, status | empty, loading |
 | A-12 | Customer detail | `/admin/customers/:id` | M+ | Support view | Profile, orders, reservations, notes, suspend/reactivate | not-found |
 | A-13 | Promotions | `/admin/content/promotions` | M+ | Campaigns | List (active/scheduled/expired), create/edit, placement, schedule | empty, invalid date range, conflict warning |
 | A-14 | Gallery | `/admin/content/gallery` | M+ | Photo library | Grid, upload (signed), alt/caption/category, publish toggle, reorder, delete | upload error, unsaved changes |
 | A-15 | Homepage & About | `/admin/content/pages` | M+ | Curate marketing | Featured dish picker, hero banner slots, story copy + image, section toggles | unsaved changes, missing required image |
-| A-16 | Settings | `/admin/settings` | A | Business configuration | Tabs: Brand/SEO · Contact & hours (approve/publish toggles) · Social · Reservations · Fulfilment & delivery (zones + verification) · Payments (methods, provider status, activation checklist) · Email templates · Staff & roles · Integrations status | validation, secret never echoed, test-email button, partial save, method cannot be enabled while unconfigured, unverified fields clearly marked "not public" |
+| A-16 | Settings | `/admin/settings` | M+ | Business configuration | **Implemented subset.** Contact approval/publish, opening hours, reservations, fulfillment/pickup/delivery flags, delivery zones, payment methods and verification approvals; brand/SEO/social/staff/email-template tabs remain planned | validation, secret never echoed, method cannot be enabled while unconfigured, unverified fields clearly marked "not public" |
 
 Cross-cutting admin components: role-aware sidebar, breadcrumbs, command/search (orders, dishes,
 customers), data table with server pagination, confirm dialog, drawer form, upload dropzone,

@@ -1,7 +1,7 @@
 # FAB FOODS — API Documentation (design)
 
-Base URL: `/api/v1`. Status: Phase 0 design plus the Phase 2 Stage 2 implemented subset
-documented in §0. Endpoints in later sections are planned and may not exist yet.
+Base URL: `/api/v1`. Status: Phase 0 design plus the Phase 2 Stage 2 and Stage 3 implemented
+subsets documented in §0 and §0.1. Endpoints in later sections are planned and may not exist yet.
 
 ---
 
@@ -35,7 +35,55 @@ Request notes:
 
 Not implemented in Stage 2: `POST /orders`, payment initiation/webhooks, public settings/content/
 gallery/reviews/promotions, reservation lookup/cancel by reference, uploads, email delivery and
-admin CRUD.
+admin CRUD. Stage 3 adds orders, payments, settings, cancellation and the staff subset documented
+in §0.1; the remaining items stay deferred.
+
+## 0.1 Implemented in Phase 2 Stage 3
+
+These endpoints are live and covered by `server/tests/stage3.test.js`:
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/settings/public` | Safe public subset; contact/hours stay hidden until approved; online methods stay hidden until provider-ready |
+| POST | `/orders` | Server-priced pickup order placement; guest or signed-in; offline payment starts `confirmed` with `paymentStatus: pending`; `Idempotency-Key` supported |
+| GET | `/orders/:orderNumber` | Owner or guest `?email=` lookup; public timeline only |
+| POST | `/orders/:orderNumber/cancel` | Owner/guest email match; allowed only while `pending_payment\|confirmed` and unpaid |
+| POST | `/orders/:orderNumber/payments/initiate` | Online methods only; returns a provider checkout URL; disabled until provider configured |
+| POST | `/orders/:orderNumber/payments/verify` | Re-verifies with the provider; browser redirects are not proof of payment |
+| POST | `/payments/webhooks/:provider` | Signature-verified provider webhook; inactive while the provider is disabled |
+| GET | `/me/orders` | Paginated signed-in order history |
+| GET | `/me/orders/:orderNumber` | Signed-in order detail with ownership enforced |
+| PATCH | `/me/profile` | Update name, email or phone; duplicate email returns 409 |
+| POST | `/me/password` | Current + new password; other sessions are revoked |
+| POST | `/reservations/:reference/cancel` | Owner or guest email match; allowed while `pending\|confirmed` |
+| GET | `/admin/orders` | Staff queue with `?status=&page=&limit=` |
+| GET | `/admin/orders/:id` | Order detail plus payment transactions |
+| PATCH | `/admin/orders/:id/status` | Matrix-enforced staff status transition |
+| PATCH | `/admin/orders/:id/payment` | Offline payment reconciliation only; online orders require provider verification |
+| GET | `/admin/reservations` | Staff queue with `?status=&date=&page=&limit=` |
+| PATCH | `/admin/reservations/:id/status` | Approve/decline/complete/no-show with history |
+| GET/PATCH | `/admin/settings` | Manager/admin settings; unsafe delivery or online-payment combinations are rejected |
+| GET | `/admin/emails` | Outbox list with `?status=&page=&limit=` |
+| POST | `/admin/emails/process` | Process queued mail; returns `skipped: true` while delivery is disabled |
+| POST | `/admin/emails/:id/retry` | Requeue a failed outbox message |
+
+Stage 3 request notes:
+
+- `POST /orders` is strict: `{ items: [{ slug, quantity, sizeLabel?, servingSelections?,
+  addonSelections? }], fulfillmentType, customer: { name, email, phone }, paymentMethod,
+  deliveryAddress?, notes? }`. The server re-prices every line; client prices/fees are rejected.
+- `pay_at_restaurant` requires pickup and `cash_on_delivery` requires delivery. Delivery remains
+  unavailable until zones and fees are approved.
+- Offline orders are created as `confirmed` with `paymentStatus: pending`; staff record payment
+  separately. Online orders require a configured provider and approved payment settings, then start
+  as `pending_payment` until the provider is verified.
+- Email failures never roll back an order or reservation. Messages are written to the outbox and
+  only delivered when `EMAIL_DELIVERY_ENABLED=true` with Brevo credentials.
+- Reservation requests are always `pending`; `autoConfirm: true` is rejected by validation.
+
+Stage 3 deliberately does not implement delivery zone CRUD, live provider webhook testing or
+activation, refunds, Cloudinary uploads, broader admin CRUD, promotions/reviews/gallery APIs, or
+password-reset/verification email delivery.
 
 ---
 
@@ -60,9 +108,9 @@ admin CRUD.
 - Money: integer RWF. Dates: ISO 8601. Reservation `date` `YYYY-MM-DD`, `time` `HH:mm`.
 - All mutating requests require `Content-Type: application/json` and an `X-CSRF-Token` header
   matching the readable `ff_csrf` cookie (double-submit). This applies to public POSTs too.
-- Idempotency: `Idempotency-Key` accepted on `POST /orders`, `POST /orders/:orderNumber/payments`
-  and `POST /reservations`.
-- Payments are provider-agnostic. Method (`mobile_money|card|cash_on_delivery|pay_at_restaurant`)
+- Idempotency: `Idempotency-Key` is accepted on `POST /orders`; replaying the same key returns the
+  original order for the same owner/email. Payment initiation reuses an existing checkout session.
+- Payments are provider-agnostic. Method (`mobile_money|bank_card|cash_on_delivery|pay_at_restaurant`)
   and provider key are separate fields. No provider is assumed selected. Browser return URLs are
   never trusted as payment proof; the server re-verifies with the provider or waits for a signed
   webhook.
@@ -147,12 +195,13 @@ ignores any client-sent prices or fees.
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| POST | `/webhooks/payments/:provider` | signature | Raw body, provider signature header verified with env secret. Records `PaymentWebhookEvent` before processing. Returns 2xx fast; processing is idempotent |
-| GET | `/webhooks/payments/:provider/health` | internal | Last event timestamp per provider (also surfaced in admin) |
+| POST | `/payments/webhooks/:provider` | signature | **Implemented.** Provider signature header verified with env secret; duplicate provider event ids are ignored; only verified payments mark an order paid |
+| GET | `/payments/webhooks/:provider/health` | internal | Planned |
 
-Rules: the route is mounted **before** `express.json()`; a failed signature returns `401` and is
-never processed; unknown provider keys return `404`; duplicates by `(provider, eventId)` return
-`200` without side effects; only `succeeded` events may mark an order paid.
+Rules: the webhook path is exempt from CSRF and authenticated by the provider signature; a failed
+signature returns `403`; unknown provider keys return `404`; duplicates by `(provider, eventId)`
+return `200` without side effects; only provider-verified `succeeded` payments may mark an order
+paid. The adapter is inactive while `PAYMENT_PROVIDER=disabled`.
 
 ### Reservations
 | Method | Path | Auth | Description |
@@ -161,7 +210,7 @@ never processed; unknown provider keys return `404`; duplicates by `(provider, e
 | GET | `/reservations/mine` | required | **Implemented.** Signed-in user's request history |
 | GET | `/reservations/availability` | public | Planned. `?date=` returns slots, closed flag, capacity remaining (advisory) |
 | GET | `/reservations/:reference` | email match | Planned. Lookup requires `?email=` matching the record |
-| POST | `/reservations/:reference/cancel` | email match | Planned. Cancel while `pending\|confirmed` |
+| POST | `/reservations/:reference/cancel` | owner/email match | **Implemented.** Cancel while `pending\|confirmed`; queues a cancellation email |
 
 ### Auth
 | Method | Path | Description |
@@ -179,19 +228,24 @@ never processed; unknown provider keys return `404`; duplicates by `(provider, e
 ### Customer (auth: customer+)
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/me` | Profile |
-| PATCH | `/me` | name, phone, marketingOptIn |
-| POST | `/me/password` | Current + new password; revokes other sessions |
-| GET/POST/PATCH/DELETE | `/me/addresses[/:id]` | Max 5 |
-| GET | `/me/orders` | Paginated history |
-| GET | `/me/orders/:id` | Ownership enforced |
-| POST | `/me/orders/:id/reorder` | Returns current cart payload with price/availability deltas |
-| GET | `/me/reservations` | History |
-| POST | `/me/reservations/:id/cancel` | Ownership enforced |
+| GET | `/auth/me` | **Implemented.** Current profile |
+| PATCH | `/me/profile` | **Implemented.** Update name, email or phone |
+| POST | `/me/password` | **Implemented.** Current + new password; revokes other sessions |
+| GET/POST/PATCH/DELETE | `/me/addresses[/:id]` | Planned. Max 5 |
+| GET | `/me/orders` | **Implemented.** Paginated order history |
+| GET | `/me/orders/:orderNumber` | **Implemented.** Ownership enforced |
+| POST | `/me/orders/:id/reorder` | Planned. Returns current cart payload with price/availability deltas |
+| GET | `/reservations/mine` | **Implemented.** Reservation history |
+| POST | `/reservations/:reference/cancel` | **Implemented.** Owner/email match enforced |
 
 ---
 
 ## 3. Admin (auth: staff/manager/admin unless noted)
+
+Stage 3 implements the order queue/detail/status/payment endpoints, reservation queue/status,
+the settings read/update endpoint and the email outbox list/process/retry endpoints below.
+Analytics, menu CRUD, payments ledger, customers, content, staff, uploads and audit logs remain
+planned.
 
 ### Analytics
 | Method | Path | Role | Description |
@@ -220,10 +274,10 @@ never processed; unknown provider keys return `404`; duplicates by `(provider, e
 ### Orders
 | Method | Path | Role | Description |
 | --- | --- | --- | --- |
-| GET | `/admin/orders` | S+ | `?status=&search=&from=&to=&page=&limit=` |
-| GET | `/admin/orders/:id` | S+ | Full detail + timeline + email logs |
-| PATCH | `/admin/orders/:id/status` | S+ | `{status, note}`; matrix enforced |
-| PATCH | `/admin/orders/:id/payment` | M+ | `{status, note}` manual reconciliation; audited |
+| GET | `/admin/orders` | S+ | **Implemented.** `?status=&page=&limit=` |
+| GET | `/admin/orders/:id` | S+ | **Implemented.** Full order detail + payment transactions |
+| PATCH | `/admin/orders/:id/status` | S+ | **Implemented.** `{status, note}`; matrix enforced |
+| PATCH | `/admin/orders/:id/payment` | S+ | **Implemented.** Offline `{paymentStatus, note}` reconciliation; online orders require provider verification |
 | POST | `/admin/orders/:id/cancel` | M+ | Requires reason |
 | POST | `/admin/orders` | M+ | Phone/walk-in order capture (optional, Phase 4) |
 
@@ -246,9 +300,9 @@ never processed; unknown provider keys return `404`; duplicates by `(provider, e
 ### Reservations
 | Method | Path | Role | Description |
 | --- | --- | --- | --- |
-| GET | `/admin/reservations` | S+ | `?status=&date=&search=` |
-| GET | `/admin/reservations/:id` | S+ | Detail + email log |
-| PATCH | `/admin/reservations/:id/status` | S+ | Accept/reject/seat/complete/no-show |
+| GET | `/admin/reservations` | S+ | **Implemented.** `?status=&date=&page=&limit=` |
+| GET | `/admin/reservations/:id` | S+ | Planned. Detail + email log |
+| PATCH | `/admin/reservations/:id/status` | S+ | **Implemented.** Confirm/decline/complete/no-show with history |
 | PATCH | `/admin/reservations/:id` | M+ | Reschedule/party size/notes |
 | POST | `/admin/reservations` | S+ | Record phone/walk-in reservation |
 | DELETE | `/admin/reservations/:id` | A | Only `rejected\|cancelled` |
@@ -268,16 +322,17 @@ never processed; unknown provider keys return `404`; duplicates by `(provider, e
 | CRUD | `/admin/gallery[/:id]` | M+ | Publish toggle, order |
 | PATCH | `/admin/content/home` | M+ | Hero slides, featured dish ids, section toggles |
 | PATCH | `/admin/content/about` | M+ | Story copy + image |
-| GET | `/admin/settings` | A | Full settings (no secrets) |
-| PATCH | `/admin/settings/:section` | A | `brand\|contact\|hours\|social\|fulfillment\|reservations\|payments\|content\|seo`. Payments section returns masked config state only; enabling an online method is rejected unless the provider is configured and the webhook is healthy |
+| GET | `/admin/settings` | M+ | **Implemented.** Full settings plus safe public projection |
+| PATCH | `/admin/settings` | M+ | **Implemented.** Partial nested patch for contact, hours, fulfillment, reservations, payments and verification. Enabling delivery or online payment without approval/configuration is rejected |
 | GET | `/admin/reviews` | M+ | Moderation queue |
 | PATCH | `/admin/reviews/:id` | M+ | Approve/feature/reply |
 | GET | `/admin/staff` | A | List |
 | POST | `/admin/staff` | A | Invite with role |
 | PATCH | `/admin/staff/:id` | A | Role/status |
-| POST | `/admin/email/test` | A | Sends test through Brevo, logs result |
-| GET | `/admin/email-logs` | M+ | Delivery diagnostics + retry |
-| POST | `/admin/email-logs/:id/retry` | M+ | |
+| POST | `/admin/email/test` | A | Planned. Sends test through Brevo, logs result |
+| GET | `/admin/emails` | M+ | **Implemented.** Outbox diagnostics with `?status=&page=&limit=` |
+| POST | `/admin/emails/process` | M+ | **Implemented.** Processes queued mail; returns `skipped: true` while delivery is disabled |
+| POST | `/admin/emails/:id/retry` | M+ | **Implemented.** Requeues a failed outbox message |
 | POST | `/admin/uploads/signature` | M+ | Signed Cloudinary params; folder + allowed formats enforced |
 | GET | `/admin/audit-logs` | A | Filter by actor/target/date |
 

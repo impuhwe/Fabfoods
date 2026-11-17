@@ -44,6 +44,14 @@ export function getWithAuth(path, tokens) {
   return request(app).get(`${API}${path}`).set('Cookie', cookieHeader(tokens));
 }
 
+export function patchWithCsrf(path, body, tokens) {
+  return request(app)
+    .patch(`${API}${path}`)
+    .set('Cookie', cookieHeader(tokens))
+    .set('X-CSRF-Token', tokens.ff_csrf)
+    .send(body);
+}
+
 export async function registerUser(overrides = {}) {
   const { tokens } = await fetchCsrf();
   const payload = {

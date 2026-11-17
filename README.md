@@ -56,22 +56,22 @@ in production unless `ALLOW_ADMIN_BOOTSTRAP=true` is explicitly set.
 
 ## Scripts
 
-| Command                | Purpose                             |
-| ---------------------- | ----------------------------------- |
-| `npm run dev`          | Run API and web client together     |
-| `npm run dev:server`   | Run the API with Node watch mode    |
-| `npm run dev:client`   | Run the Vite dev server             |
-| `npm run build`        | Production build of the client      |
-| `npm run start`        | Start the API                       |
-| `npm run lint`         | Lint server and client              |
-| `npm run test`         | Run server and client tests         |
-| `npm run test:e2e`     | Run Playwright QA against the QA API |
-| `npm run test:e2e:stage2` | Run the Stage 2 public-site QA spec |
-| `npm run test:e2e:stage3` | Run the Stage 3 order/admin QA spec |
-| `npm run qa:lighthouse` | Run Lighthouse against a preview URL |
-| `npm run format`       | Format the repository with Prettier |
-| `npm run create-admin` | Bootstrap an administrator account  |
-| `npm run seed:menu`    | Seed the PDF-sourced menu register  |
+| Command                   | Purpose                              |
+| ------------------------- | ------------------------------------ |
+| `npm run dev`             | Run API and web client together      |
+| `npm run dev:server`      | Run the API with Node watch mode     |
+| `npm run dev:client`      | Run the Vite dev server              |
+| `npm run build`           | Production build of the client       |
+| `npm run start`           | Start the API                        |
+| `npm run lint`            | Lint server and client               |
+| `npm run test`            | Run server and client tests          |
+| `npm run test:e2e`        | Run Playwright QA against the QA API |
+| `npm run test:e2e:stage2` | Run the Stage 2 public-site QA spec  |
+| `npm run test:e2e:stage3` | Run the Stage 3 order/admin QA spec  |
+| `npm run qa:lighthouse`   | Run Lighthouse against a preview URL |
+| `npm run format`          | Format the repository with Prettier  |
+| `npm run create-admin`    | Bootstrap an administrator account   |
+| `npm run seed:menu`       | Seed the PDF-sourced menu register   |
 
 Seed the PDF-sourced menu only after MongoDB is running:
 
@@ -85,31 +85,57 @@ flags. The seed is create-only by slug, preserves existing admin edits, and does
 verification. `--reset` is development-only. A database already seeded from the Stage 1 brief
 manifest needs a development reset or a migration.
 
-## Stage 2 public website
+## Stage 2 and Stage 3 website
 
 Implemented public routes:
 
 - `/` home, `/menu`, `/menu/:slug`, `/about`, `/gallery`, `/reservations`, `/contact`
-- `/cart`, `/checkout` (quote and fulfilment review only; order placement is disabled)
+- `/cart`, `/checkout` (server-priced order placement for pickup; delivery stays gated)
+- `/order/:orderNumber` (guest email lookup, status timeline, payment state, cancellation)
 - `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`
-- `/account` (protected; profile summary and signed-in reservation history)
+- `/account` (protected; profile editing, password change, order history, reservation history
+  and cancellation)
+
+Implemented staff routes (staff/manager/admin, with settings limited to manager/admin):
+
+- `/admin`, `/admin/orders`, `/admin/reservations`, `/admin/settings`
 
 Implemented public APIs:
 
 - `GET /api/v1/menu/categories`, `/menu/meta`, `/menu/items`, `/menu/items/:slug`
+- `GET /api/v1/settings/public`
 - `POST /api/v1/orders/quote` (server-authoritative pricing and fulfilment checks)
-- `POST /api/v1/reservations`, `GET /api/v1/reservations/mine`
+- `POST /api/v1/orders`, `GET /api/v1/orders/:orderNumber`,
+  `POST /api/v1/orders/:orderNumber/cancel`
+- `POST /api/v1/orders/:orderNumber/payments/initiate`,
+  `POST /api/v1/orders/:orderNumber/payments/verify`
+- `POST /api/v1/payments/webhooks/:provider` (signature-verified; inactive while disabled)
+- `POST /api/v1/reservations`, `GET /api/v1/reservations/mine`,
+  `POST /api/v1/reservations/:reference/cancel`
 - `POST /api/v1/contact`
+- `GET /api/v1/me/orders`, `GET /api/v1/me/orders/:orderNumber`,
+  `PATCH /api/v1/me/profile`, `POST /api/v1/me/password`
+
+Implemented staff APIs:
+
+- `GET /api/v1/admin/orders`, `GET /api/v1/admin/orders/:id`,
+  `PATCH /api/v1/admin/orders/:id/status`, `PATCH /api/v1/admin/orders/:id/payment`
+- `GET /api/v1/admin/reservations`, `PATCH /api/v1/admin/reservations/:id/status`
+- `GET /api/v1/admin/settings`, `PATCH /api/v1/admin/settings`
+- `GET /api/v1/admin/emails`, `POST /api/v1/admin/emails/process`,
+  `POST /api/v1/admin/emails/:id/retry`
 
 The public site never publishes unapproved contact details, opening hours, social
 links, delivery fees or business claims. PDF-sourced items with blocking review tags
 are visible but cannot be ordered. Reservation submissions are requests, not confirmed
 bookings. Temporary Unsplash editorial imagery is disclosed in the footer and gallery
-until genuine FAB FOODS photography is supplied.
+until genuine FAB FOODS photography is supplied. Online payments remain unavailable until
+a provider is configured and approved; email messages are queued in the outbox but not
+delivered until Brevo credentials are supplied and delivery is enabled.
 
-Known pending integrations: online payment provider, delivery zones and fees, email
-delivery (password reset, verification, contact notification), and genuine photography.
-See `docs/API_DOCUMENTATION.md`, `docs/DATABASE_DESIGN.md` and
+Known pending integrations: payment provider credentials and business approval, delivery
+zones and fees, Brevo email delivery (including password reset and verification), and
+genuine photography. See `docs/API_DOCUMENTATION.md`, `docs/DATABASE_DESIGN.md` and
 `docs/SCREEN_INVENTORY.md` for the implemented subset.
 
 ## Security baseline
@@ -134,4 +160,8 @@ See `docs/API_DOCUMENTATION.md`, `docs/DATABASE_DESIGN.md` and
 - Phase 2 — Stage 1 PDF-sourced menu models, manifest, seed and pricing: complete, awaiting business review.
 - Phase 2 — Stage 2 public website, menu API, cart, reservation requests, contact messages,
   account views and checkout foundation: complete, awaiting approval and business inputs.
-- Phase 3+ — online order placement, payment capture, email, admin CRUD and later phases: not started.
+- Phase 2 — Stage 3 server-priced orders, offline payments, payment adapter, email outbox,
+  account management, reservation cancellation, settings and staff order/reservation/settings
+  screens: complete, awaiting provider credentials, business approval and genuine photography.
+- Phase 3+ — delivery operations, live payment capture/webhooks, email delivery, broader admin
+  CRUD and later phases: pending external inputs.

@@ -49,9 +49,11 @@ export const flutterwaveProvider = {
         tx_ref: providerReference,
         amount: order.total,
         currency: order.currency,
-        redirect_url: redirectUrl || env.PAYMENT_REDIRECT_URL || `${env.clientOrigins[0]}/checkout`,
-        payment_options:
-          method === PAYMENT_METHODS.MOBILE_MONEY ? 'mobilemoneyrwanda' : 'card',
+        redirect_url:
+          redirectUrl ||
+          env.PAYMENT_REDIRECT_URL ||
+          `${env.clientOrigins[0]}/order/${order.orderNumber}`,
+        payment_options: method === PAYMENT_METHODS.MOBILE_MONEY ? 'mobilemoneyrwanda' : 'card',
         customer: {
           email: order.customer.email,
           name: order.customer.name,
@@ -66,7 +68,8 @@ export const flutterwaveProvider = {
     });
 
     const checkoutUrl = body?.data?.link;
-    if (!checkoutUrl) throw serviceUnavailable('The payment provider did not return a checkout link');
+    if (!checkoutUrl)
+      throw serviceUnavailable('The payment provider did not return a checkout link');
 
     return {
       provider: 'flutterwave',
