@@ -7,9 +7,11 @@ import Field from '../../components/ui/Field.jsx';
 import Input from '../../components/ui/Input.jsx';
 import Select from '../../components/ui/Select.jsx';
 import Skeleton from '../../components/ui/Skeleton.jsx';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { formatRwf } from '../../lib/format.js';
 import { getApiErrorMessage } from '../../lib/api.js';
+import { can, PERMISSIONS } from '../../lib/permissions.js';
 import {
   getAdminOrder,
   getAdminOrders,
@@ -55,6 +57,7 @@ const PAYMENT_LABELS = {
 };
 
 export function AdminOrders() {
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [status, setStatus] = useState('');
   const [orders, setOrders] = useState([]);
@@ -64,6 +67,9 @@ export function AdminOrders() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState('');
+
+  const canChangeStatus = can(user, PERMISSIONS.ORDERS_STATUS_UPDATE);
+  const canUpdatePayment = can(user, PERMISSIONS.ORDERS_PAYMENT_UPDATE);
 
   async function loadOrders(nextStatus = status) {
     setLoading(true);
@@ -106,9 +112,7 @@ export function AdminOrders() {
         note,
       });
       setSelected((current) => ({ ...current, order }));
-      setOrders((current) =>
-        current.map((entry) => (entry.id === order.id ? order : entry)),
-      );
+      setOrders((current) => current.map((entry) => (entry.id === order.id ? order : entry)));
       setNote('');
       addToast({ title: `Order marked ${nextStatus.replaceAll('_', ' ')}`, variant: 'success' });
     } catch (updateError) {
@@ -128,9 +132,7 @@ export function AdminOrders() {
         note,
       });
       setSelected((current) => ({ ...current, order }));
-      setOrders((current) =>
-        current.map((entry) => (entry.id === order.id ? order : entry)),
-      );
+      setOrders((current) => current.map((entry) => (entry.id === order.id ? order : entry)));
       setNote('');
       addToast({ title: `Payment marked ${paymentStatus}`, variant: 'success' });
     } catch (updateError) {
@@ -269,11 +271,15 @@ export function AdminOrders() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-cocoa-600">Payment</dt>
-                  <dd className="capitalize">{selected.order.paymentStatus.replaceAll('_', ' ')}</dd>
+                  <dd className="capitalize">
+                    {selected.order.paymentStatus.replaceAll('_', ' ')}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-cocoa-600">Method</dt>
-                  <dd>{PAYMENT_LABELS[selected.order.paymentMethod] ?? selected.order.paymentMethod}</dd>
+                  <dd>
+                    {PAYMENT_LABELS[selected.order.paymentMethod] ?? selected.order.paymentMethod}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-cocoa-600">Fulfilment</dt>
@@ -287,30 +293,37 @@ export function AdminOrders() {
                 </p>
               ) : null}
 
-              <div className="mt-4">
-                <Field label="Staff note" hint="Optional note saved with the status change.">
-                  <Input value={note} onChange={(event) => setNote(event.target.value)} />
-                </Field>
-              </div>
+              {canChangeStatus || canUpdatePayment ? (
+                <div className="mt-4">
+                  <Field label="Staff note" hint="Saved with the next status or payment change.">
+                    <Input value={note} onChange={(event) => setNote(event.target.value)} />
+                  </Field>
+                </div>
+              ) : null}
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {(NEXT_STATUSES[selected.order.status] ?? []).map((nextStatus) => (
-                  <Button
-                    key={nextStatus}
-                    size="sm"
-                    variant={nextStatus === 'cancelled' ? 'danger' : 'secondary'}
-                    onClick={() => changeStatus(nextStatus)}
-                    loading={busy === 'status'}
-                  >
-                    Mark {nextStatus.replaceAll('_', ' ')}
-                  </Button>
-                ))}
-                {(NEXT_STATUSES[selected.order.status] ?? []).length === 0 ? (
-                  <p className="text-xs text-cocoa-500">No further status changes are available.</p>
-                ) : null}
-              </div>
+              {canChangeStatus ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {(NEXT_STATUSES[selected.order.status] ?? []).map((nextStatus) => (
+                    <Button
+                      key={nextStatus}
+                      size="sm"
+                      variant={nextStatus === 'cancelled' ? 'danger' : 'secondary'}
+                      onClick={() => changeStatus(nextStatus)}
+                      loading={busy === 'status'}
+                    >
+                      Mark {nextStatus.replaceAll('_', ' ')}
+                    </Button>
+                  ))}
+                  {(NEXT_STATUSES[selected.order.status] ?? []).length === 0 ? (
+                    <p className="text-xs text-cocoa-500">
+                      No further status changes are available.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
 
-              {!['mobile_money', 'bank_card'].includes(selected.order.paymentMethod) &&
+              {canUpdatePayment &&
+              !['mobile_money', 'bank_card'].includes(selected.order.paymentMethod) &&
               selected.order.paymentStatus !== 'paid' ? (
                 <div className="mt-4 border-t border-cocoa-900/10 pt-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cocoa-500">
@@ -344,7 +357,8 @@ export function AdminOrders() {
                   <ul className="mt-2 space-y-2 text-xs text-cocoa-600">
                     {selected.payments.map((payment) => (
                       <li key={payment.id} className="rounded-lg bg-cream-50 p-2">
-                        {payment.provider} · {payment.status} · {payment.providerReference || 'no reference'}
+                        {payment.provider} · {payment.status} ·{' '}
+                        {payment.providerReference || 'no reference'}
                       </li>
                     ))}
                   </ul>

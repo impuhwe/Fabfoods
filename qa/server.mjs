@@ -1,8 +1,6 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
 process.env.NODE_ENV = 'test';
-process.env.PORT = '5000';
-process.env.CLIENT_ORIGIN = 'http://localhost:5173';
 process.env.ACCESS_TOKEN_SECRET = 'qa-access-secret-0123456789abcdef0123456789';
 process.env.REFRESH_TOKEN_PEPPER = 'qa-refresh-pepper-0123456789abcdef0123456789';
 process.env.ACCESS_TOKEN_TTL = '15m';
@@ -15,6 +13,12 @@ process.env.LOG_LEVEL = 'error';
 process.env.ALLOW_ADMIN_BOOTSTRAP = 'false';
 process.env.PAYMENT_PROVIDER = 'disabled';
 process.env.EMAIL_DELIVERY_ENABLED = 'false';
+
+const qaApiPort = process.env.QA_API_PORT ?? '5000';
+const clientOrigin = process.env.E2E_CLIENT_ORIGIN ?? 'http://localhost:5173';
+
+process.env.PORT = qaApiPort;
+process.env.CLIENT_ORIGIN = clientOrigin;
 
 const mongo = await MongoMemoryServer.create();
 process.env.MONGODB_URI = mongo.getUri('fabs_qa');
@@ -67,8 +71,8 @@ await RestaurantSettings.create({
   },
 });
 
-const server = app.listen(5000, () => {
-  console.log('QA API listening on http://localhost:5000');
+const server = app.listen(Number(qaApiPort), () => {
+  console.log(`QA API listening on http://localhost:${qaApiPort}`);
 });
 
 async function shutdown() {

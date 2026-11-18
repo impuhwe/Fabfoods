@@ -4,6 +4,7 @@ import Badge from '../ui/Badge.jsx';
 import Button from '../ui/Button.jsx';
 import { formatRwf } from '../../lib/format.js';
 import { menuItemImage } from '../../lib/imagery.js';
+import MenuImage from './MenuImage.jsx';
 import { useCart } from '../../contexts/CartContext.jsx';
 import { useToast } from '../../contexts/ToastContext.jsx';
 
@@ -15,7 +16,11 @@ export function MenuItemCard({ item }) {
 
   function quickAdd() {
     addItem(
-      { ...item, image },
+      {
+        ...item,
+        image,
+        imageAlt: item.image?.alt || `Illustrative image for ${item.name}`,
+      },
       {
         quantity: 1,
         unitPrice: item.price,
@@ -26,17 +31,16 @@ export function MenuItemCard({ item }) {
   }
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-cocoa-900/10 bg-white">
+    <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-cocoa-900/10 bg-white transition-shadow duration-300 hover:shadow-lift">
       <Link
         to={`/menu/${item.slug}`}
         className="relative block aspect-[4/3] overflow-hidden bg-cream-200"
         tabIndex={-1}
         aria-hidden="true"
       >
-        <img
-          src={image}
+        <MenuImage
+          item={item}
           alt=""
-          loading="lazy"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-cocoa-950/35 to-transparent" />
@@ -59,7 +63,7 @@ export function MenuItemCard({ item }) {
               </Link>
             </h3>
           </div>
-          <p className="shrink-0 pt-5 text-sm font-semibold tabular-nums text-cocoa-900">
+          <p className="font-price shrink-0 pt-5 text-lg font-semibold text-cocoa-900">
             {item.hasSizeOptions ? (
               <span className="mr-1 text-xs font-normal text-cocoa-500">from</span>
             ) : null}

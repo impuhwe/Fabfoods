@@ -106,6 +106,7 @@ async function main() {
       `${summary.distinctProductNames} distinct product names; ${summary.sourceAddonLines} add-on lines; ${summary.modeledRecords} modeled records.`,
       `Categories created: ${summary.categoriesCreated}; existing: ${summary.categoriesExisting}.`,
       `Items created: ${summary.itemsCreated}; existing: ${summary.itemsExisting}.`,
+      `Menu images attached: ${summary.itemsWithImages}.`,
       `Review issues: ${summary.reviewIssues}; items with unresolved blocking issues: ${summary.itemsWithUnresolvedIssues}.`,
     ].join('\n'),
   );

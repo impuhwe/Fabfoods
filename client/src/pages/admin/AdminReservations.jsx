@@ -7,10 +7,14 @@ import Field from '../../components/ui/Field.jsx';
 import Input from '../../components/ui/Input.jsx';
 import Select from '../../components/ui/Select.jsx';
 import Skeleton from '../../components/ui/Skeleton.jsx';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { getApiErrorMessage } from '../../lib/api.js';
+import { can, PERMISSIONS } from '../../lib/permissions.js';
 import {
+  getAdminReservation,
   getAdminReservations,
+  rescheduleAdminReservation,
   updateAdminReservationStatus,
 } from '../../services/adminApi.js';
 
@@ -43,6 +47,7 @@ const NEXT_ACTIONS = {
 const STATUSES = ['pending', 'confirmed', 'declined', 'cancelled', 'completed', 'no_show'];
 
 export function AdminReservations() {
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [status, setStatus] = useState('pending');
   const [reservations, setReservations] = useState([]);
@@ -50,7 +55,11 @@ export function AdminReservations() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
   const [note, setNote] = useState('');
+  const [reschedule, setReschedule] = useState({ date: '', time: '', partySize: '' });
   const [busy, setBusy] = useState(false);
+
+  const canChangeStatus = can(user, PERMISSIONS.RESERVATIONS_STATUS_UPDATE);
+  const canReschedule = can(user, PERMISSIONS.RESERVATIONS_RESCHEDULE);
 
   async function load(nextStatus = status) {
     setLoading(true);
@@ -68,6 +77,25 @@ export function AdminReservations() {
   useEffect(() => {
     load(status);
   }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function selectReservation(id) {
+    setBusy(true);
+    setError('');
+    try {
+      const reservation = await getAdminReservation(id);
+      setSelected(reservation);
+      setNote('');
+      setReschedule({
+        date: reservation.date ?? '',
+        time: reservation.time ?? '',
+        partySize: String(reservation.partySize ?? ''),
+      });
+    } catch (detailError) {
+      setError(getApiErrorMessage(detailError, 'That reservation could not be loaded.'));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function changeStatus(nextStatus) {
     if (!selected) return;
@@ -89,6 +117,31 @@ export function AdminReservations() {
       });
     } catch (updateError) {
       setError(getApiErrorMessage(updateError, 'The reservation could not be updated.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveReschedule(event) {
+    event.preventDefault();
+    if (!selected) return;
+    setBusy(true);
+    setError('');
+    try {
+      const updated = await rescheduleAdminReservation(selected.id, {
+        date: reschedule.date,
+        time: reschedule.time,
+        partySize: Number(reschedule.partySize),
+        note,
+      });
+      setSelected(updated);
+      setReservations((current) =>
+        current.map((entry) => (entry.id === updated.id ? updated : entry)),
+      );
+      setNote('');
+      addToast({ title: 'Reservation rescheduled', variant: 'success' });
+    } catch (rescheduleError) {
+      setError(getApiErrorMessage(rescheduleError, 'The reservation could not be rescheduled.'));
     } finally {
       setBusy(false);
     }
@@ -146,10 +199,7 @@ export function AdminReservations() {
               <button
                 key={reservation.id}
                 type="button"
-                onClick={() => {
-                  setSelected(reservation);
-                  setNote('');
-                }}
+                onClick={() => selectReservation(reservation.id)}
                 className={`block w-full rounded-xl border bg-white p-4 text-left transition-colors hover:border-ember-500/40 ${
                   selected?.id === reservation.id
                     ? 'border-ember-500 ring-1 ring-ember-500/30'
@@ -223,28 +273,81 @@ export function AdminReservations() {
                 </p>
               ) : null}
 
-              <div className="mt-4">
-                <Field label="Staff note" hint="Optional note saved with the decision.">
-                  <Input value={note} onChange={(event) => setNote(event.target.value)} />
-                </Field>
-              </div>
+              {canChangeStatus || canReschedule ? (
+                <div className="mt-4">
+                  <Field label="Staff note" hint="Saved with the next decision or reschedule.">
+                    <Input value={note} onChange={(event) => setNote(event.target.value)} />
+                  </Field>
+                </div>
+              ) : null}
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {(NEXT_ACTIONS[selected.status] ?? []).map((action) => (
-                  <Button
-                    key={action.status}
-                    size="sm"
-                    variant={action.variant ?? 'secondary'}
-                    onClick={() => changeStatus(action.status)}
-                    loading={busy}
-                  >
-                    {action.label}
+              {canChangeStatus ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {(NEXT_ACTIONS[selected.status] ?? []).map((action) => (
+                    <Button
+                      key={action.status}
+                      size="sm"
+                      variant={action.variant ?? 'secondary'}
+                      onClick={() => changeStatus(action.status)}
+                      loading={busy}
+                    >
+                      {action.label}
+                    </Button>
+                  ))}
+                  {(NEXT_ACTIONS[selected.status] ?? []).length === 0 ? (
+                    <p className="text-xs text-cocoa-500">
+                      No further status changes are available.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {canReschedule && ['pending', 'confirmed'].includes(selected.status) ? (
+                <form className="mt-5 border-t border-cocoa-900/10 pt-4" onSubmit={saveReschedule}>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cocoa-500">
+                    Reschedule
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <Field label="Date">
+                      <Input
+                        required
+                        type="date"
+                        value={reschedule.date}
+                        onChange={(event) =>
+                          setReschedule((current) => ({ ...current, date: event.target.value }))
+                        }
+                      />
+                    </Field>
+                    <Field label="Time">
+                      <Input
+                        required
+                        type="time"
+                        value={reschedule.time}
+                        onChange={(event) =>
+                          setReschedule((current) => ({ ...current, time: event.target.value }))
+                        }
+                      />
+                    </Field>
+                    <Field label="Guests">
+                      <Input
+                        required
+                        type="number"
+                        min="1"
+                        value={reschedule.partySize}
+                        onChange={(event) =>
+                          setReschedule((current) => ({
+                            ...current,
+                            partySize: event.target.value,
+                          }))
+                        }
+                      />
+                    </Field>
+                  </div>
+                  <Button className="mt-3" size="sm" variant="secondary" disabled={busy}>
+                    Save new time
                   </Button>
-                ))}
-                {(NEXT_ACTIONS[selected.status] ?? []).length === 0 ? (
-                  <p className="text-xs text-cocoa-500">No further actions are available.</p>
-                ) : null}
-              </div>
+                </form>
+              ) : null}
 
               {selected.statusHistory?.length ? (
                 <div className="mt-4 border-t border-cocoa-900/10 pt-4">

@@ -42,6 +42,16 @@
 }
 
 @layer components {
+  .customer-ui :is(h1, h2, h3, h4) {
+    font-family: theme('fontFamily.display');
+  }
+
+  .customer-ui .font-price {
+    font-family: theme('fontFamily.display');
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
   .skip-link {
     @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-cocoa-950 focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-cream-50;
   }

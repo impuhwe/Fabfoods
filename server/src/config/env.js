@@ -20,6 +20,7 @@ const booleanFromEnv = (defaultValue) =>
 const schema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    DEMO_MODE: z.enum(['true', 'false']).optional().default('false'),
     PORT: z.coerce.number().int().min(1).max(65535).default(5000),
     MONGODB_URI: z
       .string()
@@ -52,8 +53,20 @@ const schema = z
     EMAIL_FROM_EMAIL: z.string().optional().default(''),
     EMAIL_FROM_NAME: z.string().optional().default('Fabs Restaurant'),
     EMAIL_OUTBOX_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(20),
+    CLOUDINARY_CLOUD_NAME: z.string().trim().optional().default(''),
+    CLOUDINARY_API_KEY: z.string().trim().optional().default(''),
+    CLOUDINARY_API_SECRET: z.string().trim().optional().default(''),
+    CLOUDINARY_UPLOAD_FOLDER: z.string().trim().optional().default('fab-foods/menu'),
   })
   .superRefine((value, ctx) => {
+    if (value.NODE_ENV === 'production' && value.DEMO_MODE === 'true') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['DEMO_MODE'],
+        message: 'must not be enabled in production',
+      });
+    }
+
     if (value.NODE_ENV === 'production' && !value.COOKIE_SECURE) {
       ctx.addIssue({
         code: 'custom',
@@ -106,6 +119,34 @@ const schema = z
         }
       }
     }
+
+    const cloudinaryKeys = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
+    const configuredCloudinaryKeys = cloudinaryKeys.filter((key) => value[key]);
+    if (
+      configuredCloudinaryKeys.length > 0 &&
+      configuredCloudinaryKeys.length < cloudinaryKeys.length
+    ) {
+      for (const key of cloudinaryKeys) {
+        if (!value[key]) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [key],
+            message: 'all Cloudinary credentials are required together',
+          });
+        }
+      }
+    }
+
+    if (
+      value.CLOUDINARY_UPLOAD_FOLDER &&
+      !/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(value.CLOUDINARY_UPLOAD_FOLDER)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['CLOUDINARY_UPLOAD_FOLDER'],
+        message: 'must be a slash-separated folder path without spaces',
+      });
+    }
   });
 
 const parsed = schema.safeParse(process.env);
@@ -125,8 +166,20 @@ export const env = Object.freeze({
   ...parsed.data,
   clientOrigins,
   isProduction: parsed.data.NODE_ENV === 'production',
+  isDemo: parsed.data.DEMO_MODE === 'true',
   isTest: parsed.data.NODE_ENV === 'test',
   isDevelopment: parsed.data.NODE_ENV === 'development',
+  cloudinary: Object.freeze({
+    cloudName: parsed.data.CLOUDINARY_CLOUD_NAME,
+    apiKey: parsed.data.CLOUDINARY_API_KEY,
+    apiSecret: parsed.data.CLOUDINARY_API_SECRET,
+    uploadFolder: parsed.data.CLOUDINARY_UPLOAD_FOLDER.replace(/^\/+|\/+$/g, ''),
+    configured: Boolean(
+      parsed.data.CLOUDINARY_CLOUD_NAME &&
+      parsed.data.CLOUDINARY_API_KEY &&
+      parsed.data.CLOUDINARY_API_SECRET,
+    ),
+  }),
 });
 
 export const REQUIRED_ENV_KEYS = Object.freeze([

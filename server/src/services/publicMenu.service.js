@@ -3,6 +3,7 @@ import MenuCategory from '../models/MenuCategory.js';
 import MenuItem from '../models/MenuItem.js';
 import { getMenuOptions } from './menuPricing.service.js';
 import { notFound } from '../utils/errors.js';
+import { toMediaDto } from '../utils/media.js';
 
 const ORDER_BLOCKING_TAGS = new Set(MENU_ORDER_BLOCKING_REVIEW_TAGS);
 
@@ -58,6 +59,8 @@ export function toPublicMenuItem(item, { detail = false } = {}) {
       : 'Awaiting staff verification before online ordering.',
     isFeatured: Boolean(item.isFeatured),
     isPopular: Boolean(item.isPopular),
+    image: toMediaDto(item.image),
+    gallery: (item.gallery ?? []).map(toMediaDto),
     hasSizeOptions: options.sizeOptions.length > 0,
     hasServingOptions: options.servingOptions.length > 0,
     hasAddonGroups: options.addonGroups.length > 0,

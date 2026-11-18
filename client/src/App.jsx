@@ -1,9 +1,9 @@
 import { Route, Routes } from 'react-router-dom';
 import PublicLayout from './components/layout/PublicLayout.jsx';
 import AdminLayout from './components/layout/AdminLayout.jsx';
-import RequireRole from './components/auth/RequireRole.jsx';
+import RequirePermission from './components/auth/RequirePermission.jsx';
 import RequireAuth from './components/auth/RequireAuth.jsx';
-import { STAFF_ROLES } from './lib/roles.js';
+import { PERMISSIONS } from './lib/permissions.js';
 import HomePage from './pages/public/HomePage.jsx';
 import MenuPage from './pages/public/MenuPage.jsx';
 import MenuItemPage from './pages/public/MenuItemPage.jsx';
@@ -25,6 +25,10 @@ import AdminOrders from './pages/admin/AdminOrders.jsx';
 import AdminReservations from './pages/admin/AdminReservations.jsx';
 import AdminMenuReview from './pages/admin/AdminMenuReview.jsx';
 import AdminSettings from './pages/admin/AdminSettings.jsx';
+import AdminCustomers from './pages/admin/AdminCustomers.jsx';
+import AdminStaff from './pages/admin/AdminStaff.jsx';
+import AdminEmails from './pages/admin/AdminEmails.jsx';
+import AdminAuditLog from './pages/admin/AdminAuditLog.jsx';
 import Forbidden from './pages/Forbidden.jsx';
 import NotFound from './pages/NotFound.jsx';
 import DevUiKit from './pages/DevUiKit.jsx';
@@ -86,28 +90,74 @@ export function App() {
       <Route
         path="/admin"
         element={
-          <RequireRole roles={STAFF_ROLES}>
+          <RequirePermission permissions={[PERMISSIONS.ADMIN_ACCESS]}>
             <AdminLayout />
-          </RequireRole>
+          </RequirePermission>
         }
       >
         <Route index element={<AdminHome />} />
-        <Route path="orders" element={<AdminOrders />} />
-        <Route path="reservations" element={<AdminReservations />} />
+        <Route
+          path="orders"
+          element={
+            <RequirePermission permissions={[PERMISSIONS.ORDERS_VIEW]}>
+              <AdminOrders />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="reservations"
+          element={
+            <RequirePermission permissions={[PERMISSIONS.RESERVATIONS_VIEW]}>
+              <AdminReservations />
+            </RequirePermission>
+          }
+        />
         <Route
           path="menu-review"
           element={
-            <RequireRole roles={['manager', 'admin']}>
+            <RequirePermission permissions={[PERMISSIONS.MENU_VIEW]}>
               <AdminMenuReview />
-            </RequireRole>
+            </RequirePermission>
           }
         />
         <Route
           path="settings"
           element={
-            <RequireRole roles={['manager', 'admin']}>
+            <RequirePermission permissions={[PERMISSIONS.SETTINGS_VIEW]}>
               <AdminSettings />
-            </RequireRole>
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="customers"
+          element={
+            <RequirePermission permissions={[PERMISSIONS.CUSTOMERS_VIEW]}>
+              <AdminCustomers />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="staff"
+          element={
+            <RequirePermission permissions={[PERMISSIONS.STAFF_VIEW]}>
+              <AdminStaff />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="emails"
+          element={
+            <RequirePermission permissions={[PERMISSIONS.EMAILS_VIEW]}>
+              <AdminEmails />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="audit"
+          element={
+            <RequirePermission permissions={[PERMISSIONS.AUDIT_VIEW]}>
+              <AdminAuditLog />
+            </RequirePermission>
           }
         />
       </Route>

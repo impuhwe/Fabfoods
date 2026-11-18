@@ -1,4 +1,5 @@
 import { MENU_REVIEW_ISSUE_LINKS } from '../scripts/data/menuReviewLinks.js';
+import { menuImageForSlug } from '../scripts/data/menu-images.manifest.js';
 import { validateMenuManifest } from '../validators/menu.validator.js';
 
 function appendReviewNote(existing, note) {
@@ -75,6 +76,7 @@ export function buildMenuSeedData(manifest) {
   const itemsBySlug = new Map();
 
   const items = data.products.map((line) => {
+    const researchedImage = menuImageForSlug(line.slug);
     const item = {
       name: line.name,
       slug: line.slug,
@@ -85,7 +87,14 @@ export function buildMenuSeedData(manifest) {
       sizeOptions: line.sizeOptions.map(cloneSizeOption),
       servingOptions: line.servingOptions.map(cloneServingGroup),
       addonGroups: line.addonGroups.map(cloneAddonGroup),
-      image: {},
+      image:
+        researchedImage?.status === 'sourced'
+          ? {
+              url: researchedImage.localPath,
+              publicId: '',
+              alt: `Illustrative image for ${line.name}`,
+            }
+          : {},
       gallery: [],
       ingredients: [],
       allergens: [],
@@ -210,6 +219,7 @@ export function buildMenuSeedData(manifest) {
       itemsWithSizeOptions: items.filter((item) => item.sizeOptions.length > 0).length,
       itemsWithServingOptions: items.filter((item) => item.servingOptions.length > 0).length,
       itemsWithIncludedItems: items.filter((item) => item.includedItems.length > 0).length,
+      itemsWithImages: items.filter((item) => item.image.url).length,
       sizeOptions: sizeOptions.length,
       servingOptions: servingOptions.length,
       includedItems: items.reduce((total, item) => total + item.includedItems.length, 0),

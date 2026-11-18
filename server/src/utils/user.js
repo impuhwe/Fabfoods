@@ -1,3 +1,5 @@
+import { permissionsForRole } from '../config/permissions.js';
+
 export function toPublicUser(user) {
   if (!user) return null;
   return {
@@ -6,6 +8,8 @@ export function toPublicUser(user) {
     email: user.email,
     phone: user.phone ?? null,
     role: user.role,
+    status: user.status ?? null,
+    permissions: permissionsForRole(user.role),
     mustChangePassword: Boolean(user.mustChangePassword),
     lastLoginAt: user.lastLoginAt ?? null,
   };

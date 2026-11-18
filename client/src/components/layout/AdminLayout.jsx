@@ -8,10 +8,14 @@ import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu,
+  ScrollText,
   Settings,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import { can, PERMISSIONS } from '../../lib/permissions.js';
 import { cn } from '../../lib/cn.js';
 import Badge from '../ui/Badge.jsx';
 import Button from '../ui/Button.jsx';
@@ -21,19 +25,53 @@ import BrandLogo from './BrandLogo.jsx';
 
 const NAV = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
-  { to: '/admin/reservations', label: 'Reservations', icon: CalendarDays },
+  {
+    to: '/admin/orders',
+    label: 'Orders',
+    icon: ClipboardList,
+    permission: PERMISSIONS.ORDERS_VIEW,
+  },
+  {
+    to: '/admin/reservations',
+    label: 'Reservations',
+    icon: CalendarDays,
+    permission: PERMISSIONS.RESERVATIONS_VIEW,
+  },
   {
     to: '/admin/menu-review',
     label: 'Menu review',
     icon: ClipboardCheck,
-    roles: ['manager', 'admin'],
+    permission: PERMISSIONS.MENU_VIEW,
+  },
+  {
+    to: '/admin/customers',
+    label: 'Customers',
+    icon: Users,
+    permission: PERMISSIONS.CUSTOMERS_VIEW,
+  },
+  {
+    to: '/admin/staff',
+    label: 'Staff',
+    icon: Users,
+    permission: PERMISSIONS.STAFF_VIEW,
+  },
+  {
+    to: '/admin/emails',
+    label: 'Email outbox',
+    icon: Mail,
+    permission: PERMISSIONS.EMAILS_VIEW,
+  },
+  {
+    to: '/admin/audit',
+    label: 'Audit log',
+    icon: ScrollText,
+    permission: PERMISSIONS.AUDIT_VIEW,
   },
   {
     to: '/admin/settings',
     label: 'Settings',
     icon: Settings,
-    roles: ['manager', 'admin'],
+    permission: PERMISSIONS.SETTINGS_VIEW,
   },
 ];
 
@@ -42,13 +80,17 @@ const TITLES = {
   '/admin/orders': 'Orders',
   '/admin/reservations': 'Reservations',
   '/admin/menu-review': 'Menu review',
+  '/admin/customers': 'Customers',
+  '/admin/staff': 'Staff',
+  '/admin/emails': 'Email outbox',
+  '/admin/audit': 'Audit log',
   '/admin/settings': 'Settings',
 };
 
 function SidebarContent({ onNavigate }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const items = NAV.filter((item) => !item.roles || item.roles.includes(user?.role));
+  const items = NAV.filter((item) => !item.permission || can(user, item.permission));
 
   async function handleLogout() {
     await logout();

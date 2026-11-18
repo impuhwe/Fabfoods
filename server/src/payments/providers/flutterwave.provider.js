@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import env from '../../config/env.js';
 import { PAYMENT_METHODS } from '../../config/constants.js';
 import { safeEqual } from '../../security/tokens.js';
@@ -100,11 +100,14 @@ export const flutterwaveProvider = {
     };
   },
 
-  verifyWebhook({ headers, body }) {
-    const suppliedHash = headers['verif-hash'];
-    if (!suppliedHash || !safeEqual(String(suppliedHash), env.FLUTTERWAVE_WEBHOOK_HASH)) {
-      return null;
-    }
+  verifyWebhook({ headers, body, rawBody }) {
+    const suppliedSignature = headers['x-flutterwave-signature'] ?? headers['verif-hash'];
+    if (!suppliedSignature || !Buffer.isBuffer(rawBody) || rawBody.length === 0) return null;
+
+    const expectedSignature = createHmac('sha256', env.FLUTTERWAVE_WEBHOOK_HASH)
+      .update(rawBody)
+      .digest('hex');
+    if (!safeEqual(String(suppliedSignature), expectedSignature)) return null;
 
     const providerReference = body?.data?.tx_ref;
     if (typeof providerReference !== 'string' || !providerReference) return null;

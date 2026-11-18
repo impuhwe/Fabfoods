@@ -44,6 +44,17 @@ describe('API configuration', () => {
     expect(resolveApiBaseUrl(undefined)).toBe('/api/v1');
   });
 
+  it('forces relative API requests in demo mode', () => {
+    expect(resolveApiBaseUrl('http://localhost:5000/api/v1/', 'demo')).toBe('/api/v1');
+    expect(resolveApiBaseUrl('/api/v1', 'demo')).toBe('/api/v1');
+  });
+
+  it('preserves configured API URLs outside demo mode', () => {
+    expect(resolveApiBaseUrl('https://api.example.com/api/v1/', 'production')).toBe(
+      'https://api.example.com/api/v1',
+    );
+  });
+
   it('uses the configured base URL with credentials enabled', () => {
     expect(API_BASE_URL).toBe(resolveApiBaseUrl(import.meta.env.VITE_API_URL));
     expect(api.defaults.baseURL).toBe(API_BASE_URL);
@@ -146,10 +157,7 @@ describe('authentication requests', () => {
     api.defaults.adapter = adapter;
 
     await expect(api.get('/auth/me')).rejects.toMatchObject({ response: { status: 401 } });
-    expect(adapter.mock.calls.map(([config]) => config.url)).toEqual([
-      '/auth/me',
-      '/auth/refresh',
-    ]);
+    expect(adapter.mock.calls.map(([config]) => config.url)).toEqual(['/auth/me', '/auth/refresh']);
   });
 });
 

@@ -106,7 +106,7 @@ export function HomePage() {
               <span className="block italic text-ember-300">brain.</span>
             </h1>
 
-            <p className="mt-7 max-w-xl text-base leading-relaxed text-cream-100/80 sm:text-lg">
+            <p className="mt-7 max-w-xl font-display text-lg leading-relaxed text-cream-100/80 sm:text-xl">
               A restaurant and coffee house in Kigali. Explore the current menu, reserve a table, or
               place a pickup order.
             </p>
@@ -123,7 +123,8 @@ export function HomePage() {
               </Button>
             </div>
             <p className="mt-5 text-xs text-cream-100/55">
-              Editorial food photography. Menu details come from the current site data.
+              Illustrative editorial food photography, not photographs of FAB FOODS dishes. Menu
+              details come from the current site data.
             </p>
           </div>
 
@@ -338,7 +339,7 @@ export function HomePage() {
         <SectionHeading
           eyebrow="In the room"
           title="A look around."
-          description="Temporary editorial imagery while FAB FOODS photography is being prepared."
+          description="Illustrative editorial imagery, not photographs of FAB FOODS dishes, while restaurant photography is being prepared."
           action={
             <Button asChild variant="ghost">
               <Link to="/gallery">

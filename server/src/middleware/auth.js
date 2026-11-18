@@ -4,6 +4,7 @@ import { verifyAccessToken } from '../security/tokens.js';
 import { toPublicUser } from '../utils/user.js';
 import { forbidden, unauthenticated } from '../utils/errors.js';
 import { USER_STATUS } from '../config/constants.js';
+import { hasPermission } from '../config/permissions.js';
 
 async function resolveSessionUser(req) {
   const token = req.cookies?.[COOKIE_NAMES.ACCESS];
@@ -66,6 +67,22 @@ export function requireRole(...roles) {
     if (!roles.includes(req.user.role)) {
       return next(forbidden('You do not have permission to do that'));
     }
+    return next();
+  };
+}
+
+export function assertPermission(req, permission) {
+  if (!req.user) throw unauthenticated('Sign in to continue');
+  if (!hasPermission(req.user.role, permission)) {
+    throw forbidden('You do not have permission to do that');
+  }
+}
+
+export function requirePermission(...permissions) {
+  return (req, _res, next) => {
+    if (!req.user) return next(unauthenticated('Sign in to continue'));
+    const allowed = permissions.every((permission) => hasPermission(req.user.role, permission));
+    if (!allowed) return next(forbidden('You do not have permission to do that'));
     return next();
   };
 }

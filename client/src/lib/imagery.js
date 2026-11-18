@@ -79,5 +79,13 @@ export function categoryImage(slug) {
 }
 
 export function menuItemImage(item) {
-  return item?.image?.url ?? categoryImage(item?.category?.slug);
+  return (
+    item?.image?.url ||
+    item?.gallery?.find((image) => image?.url)?.url ||
+    categoryImage(item?.category?.slug)
+  );
+}
+
+export function resolveImageSrc(src, fallback) {
+  return src || fallback || HERO_IMAGE;
 }

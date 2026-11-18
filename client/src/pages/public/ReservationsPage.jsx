@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useController, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarCheck, CheckCircle2, Clock3, Users } from 'lucide-react';
+import {
+  Briefcase,
+  Cake,
+  CalendarCheck,
+  CheckCircle2,
+  Clock3,
+  Coffee,
+  Heart,
+  Sparkles,
+  Users,
+} from 'lucide-react';
 import Button from '../../components/ui/Button.jsx';
 import Field from '../../components/ui/Field.jsx';
 import Input, { inputClasses } from '../../components/ui/Input.jsx';
-import Select from '../../components/ui/Select.jsx';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { getApiErrorMessage } from '../../lib/api.js';
@@ -20,12 +29,22 @@ const latest = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).f
   new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
 );
 
+const OCCASION_ICONS = {
+  'No special occasion': Sparkles,
+  Birthday: Cake,
+  Anniversary: Heart,
+  'Business meal': Briefcase,
+  'Family gathering': Users,
+  Other: Coffee,
+};
+
 export function ReservationsPage() {
   const { user } = useAuth();
   const [reservation, setReservation] = useState(null);
   const [submitError, setSubmitError] = useState('');
   const {
     register,
+    control,
     handleSubmit,
     reset,
     getValues,
@@ -43,6 +62,8 @@ export function ReservationsPage() {
       specialRequests: '',
     },
   });
+
+  const { field: occasionField } = useController({ control, name: 'occasion' });
 
   usePageMeta({
     title: 'Reservations',
@@ -146,13 +167,13 @@ export function ReservationsPage() {
   return (
     <>
       <section className="relative isolate overflow-hidden bg-cocoa-950 text-cream-50">
-          <img
-            src={RESERVATION_IMAGE}
-            alt="Restaurant table set for service"
-            {...HIGH_PRIORITY_IMAGE_PROPS}
-            decoding="async"
-            className="absolute inset-0 h-full w-full object-cover opacity-40"
-          />
+        <img
+          src={RESERVATION_IMAGE}
+          alt="Restaurant table set for service"
+          {...HIGH_PRIORITY_IMAGE_PROPS}
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover opacity-40"
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-cocoa-950/95 via-cocoa-950/75 to-cocoa-950/30" />
         <div className="relative mx-auto max-w-[1240px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
           <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-ember-300">
@@ -201,15 +222,55 @@ export function ReservationsPage() {
             >
               <Input type="time" step={900} {...register('time')} />
             </Field>
-            <Field label="Occasion" error={errors.occasion?.message} className="sm:col-span-2">
-              <Select {...register('occasion')}>
-                {OCCASIONS.map((occasion) => (
-                  <option key={occasion} value={occasion}>
-                    {occasion}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+            <fieldset className="sm:col-span-2">
+              <legend
+                id="reservation-occasion-legend"
+                className="text-sm font-medium text-cocoa-800"
+              >
+                Occasion
+              </legend>
+              <p className="mt-0.5 text-xs text-cocoa-500">Choose one, or leave it open.</p>
+              <div
+                role="radiogroup"
+                aria-labelledby="reservation-occasion-legend"
+                className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3"
+              >
+                {OCCASIONS.map((occasion) => {
+                  const Icon = OCCASION_ICONS[occasion] ?? Sparkles;
+                  const checked = occasionField.value === occasion;
+                  return (
+                    <label key={occasion} className="cursor-pointer">
+                      <input
+                        type="radio"
+                        name="occasion"
+                        value={occasion}
+                        checked={checked}
+                        onChange={() => occasionField.onChange(occasion)}
+                        onBlur={occasionField.onBlur}
+                        className="peer sr-only"
+                      />
+                      <span
+                        className={`flex h-full items-center gap-2 rounded-xl border px-3 py-3 text-left transition-colors ${
+                          checked
+                            ? 'border-ember-500 bg-ember-500/10 text-cocoa-950'
+                            : 'border-cocoa-900/15 bg-white text-cocoa-700 hover:bg-cream-100'
+                        } peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ember-500`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0 text-ember-700" aria-hidden="true" />
+                        <span className="font-display text-base font-semibold leading-tight">
+                          {occasion}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              {errors.occasion?.message ? (
+                <p role="alert" className="mt-2 text-xs font-medium text-danger">
+                  {errors.occasion.message}
+                </p>
+              ) : null}
+            </fieldset>
             <Field
               label="Special requests"
               error={errors.specialRequests?.message}

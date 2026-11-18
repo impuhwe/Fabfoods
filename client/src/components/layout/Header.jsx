@@ -44,7 +44,7 @@ export function Header() {
               to={link.to}
               className={({ isActive }) =>
                 cn(
-                  'relative rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
+                  'relative rounded-full px-3.5 py-2 font-display text-[15px] font-semibold tracking-wide transition-colors',
                   isActive ? 'text-cocoa-950' : 'text-cocoa-600 hover:text-cocoa-950',
                 )
               }
@@ -86,7 +86,7 @@ export function Header() {
 
           <Link
             to="/menu"
-            className="ml-1 hidden h-10 items-center rounded-full bg-ember-500 px-5 text-sm font-semibold text-cocoa-950 transition-colors hover:bg-ember-400 sm:inline-flex"
+            className="ml-1 hidden h-10 items-center rounded-full bg-ember-500 px-5 font-display text-base font-semibold text-cocoa-950 transition-colors hover:bg-ember-400 sm:inline-flex"
           >
             Order now
           </Link>

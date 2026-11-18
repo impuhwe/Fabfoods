@@ -3,6 +3,8 @@ import { ShoppingBag, Trash2 } from 'lucide-react';
 import Button from '../../components/ui/Button.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import QuantityStepper from '../../components/public/QuantityStepper.jsx';
+import ResolvedImage from '../../components/public/MenuImage.jsx';
+import { categoryImage } from '../../lib/imagery.js';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { useCart } from '../../contexts/CartContext.jsx';
 import { formatRwf } from '../../lib/format.js';
@@ -56,7 +58,12 @@ export function CartPage() {
         <ul className="divide-y divide-cocoa-900/10 border-y border-cocoa-900/10">
           {items.map((line) => (
             <li key={line.id} className="flex gap-4 py-5">
-              <img src={line.image} alt="" className="h-24 w-24 shrink-0 rounded-lg object-cover" />
+              <ResolvedImage
+                src={line.image}
+                fallback={categoryImage(line.categorySlug)}
+                alt={line.imageAlt ?? ''}
+                className="h-24 w-24 shrink-0 rounded-lg object-cover"
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -88,7 +95,7 @@ export function CartPage() {
                     label={line.name}
                     className="h-10 [&>button]:h-10 [&>button]:w-10"
                   />
-                  <p className="font-semibold tabular-nums text-cocoa-900">
+                  <p className="font-price text-lg font-semibold text-cocoa-900">
                     {formatRwf(line.unitPrice * line.quantity)}
                   </p>
                 </div>
@@ -101,7 +108,7 @@ export function CartPage() {
           <h2 className="font-display text-xl font-semibold text-cocoa-950">Summary</h2>
           <div className="mt-4 flex justify-between text-sm">
             <span className="text-cocoa-600">Subtotal</span>
-            <span className="font-semibold tabular-nums">{formatRwf(subtotal)}</span>
+            <span className="font-price text-lg font-semibold">{formatRwf(subtotal)}</span>
           </div>
           <p className="mt-3 text-xs leading-relaxed text-cocoa-500">
             This is an estimate. The restaurant confirms prices, availability and pickup timing at

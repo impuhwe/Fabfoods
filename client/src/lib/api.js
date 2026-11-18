@@ -16,12 +16,13 @@ const STATUS_MESSAGES = {
   504: 'The service took too long to respond. Please try again.',
 };
 
-export function resolveApiBaseUrl(value) {
+export function resolveApiBaseUrl(value, mode = import.meta.env.MODE) {
   const trimmed = typeof value === 'string' ? value.trim() : '';
+  if (mode === 'demo') return DEFAULT_API_BASE_URL;
   return trimmed.replace(/\/+$/, '') || DEFAULT_API_BASE_URL;
 }
 
-export const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL);
+export const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL, import.meta.env.MODE);
 
 export function readCookie(name) {
   if (typeof document === 'undefined') return null;

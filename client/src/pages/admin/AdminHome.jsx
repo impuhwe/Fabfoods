@@ -5,12 +5,17 @@ import {
   CalendarDays,
   ClipboardCheck,
   ClipboardList,
+  Mail,
+  ScrollText,
   Settings,
   ShieldCheck,
+  Users,
   UtensilsCrossed,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { api } from '../../lib/api.js';
+import { can, PERMISSIONS } from '../../lib/permissions.js';
+import { formatRwf } from '../../lib/format.js';
 import Badge from '../../components/ui/Badge.jsx';
 import Card, { CardDescription, CardHeader, CardTitle } from '../../components/ui/Card.jsx';
 
@@ -20,32 +25,73 @@ const SECTIONS = [
     icon: ClipboardList,
     title: 'Orders',
     copy: 'Review incoming orders, update kitchen status and record offline payments.',
+    permission: PERMISSIONS.ORDERS_VIEW,
   },
   {
     to: '/admin/reservations',
     icon: CalendarDays,
     title: 'Reservations',
     copy: 'Approve or decline table requests and keep the service team informed.',
+    permission: PERMISSIONS.RESERVATIONS_VIEW,
   },
   {
     to: '/admin/menu-review',
     icon: ClipboardCheck,
     title: 'Menu review',
     copy: 'Resolve PDF review issues, correct menu data and publish verified items.',
-    roles: ['manager', 'admin'],
+    permission: PERMISSIONS.MENU_VIEW,
+  },
+  {
+    to: '/admin/customers',
+    icon: Users,
+    title: 'Customers',
+    copy: 'View customer activity, orders and reservations.',
+    permission: PERMISSIONS.CUSTOMERS_VIEW,
+  },
+  {
+    to: '/admin/staff',
+    icon: Users,
+    title: 'Staff',
+    copy: 'Create staff accounts and manage roles and account status.',
+    permission: PERMISSIONS.STAFF_VIEW,
+  },
+  {
+    to: '/admin/emails',
+    icon: Mail,
+    title: 'Email outbox',
+    copy: 'Inspect queued messages and retry failed deliveries.',
+    permission: PERMISSIONS.EMAILS_VIEW,
+  },
+  {
+    to: '/admin/audit',
+    icon: ScrollText,
+    title: 'Audit log',
+    copy: 'Review sensitive administrative actions.',
+    permission: PERMISSIONS.AUDIT_VIEW,
   },
   {
     to: '/admin/settings',
     icon: Settings,
     title: 'Business settings',
     copy: 'Manage contact details, hours, delivery zones, payments and public verification.',
-    roles: ['manager', 'admin'],
+    permission: PERMISSIONS.SETTINGS_VIEW,
   },
+];
+
+const STAT_CARDS = [
+  { key: 'activeOrders', label: 'Active orders' },
+  { key: 'ordersToday', label: 'Orders today' },
+  { key: 'pendingReservations', label: 'Pending tables' },
+  { key: 'customers', label: 'Customers' },
+  { key: 'publishedMenuItems', label: 'Published items' },
+  { key: 'menuItemsAwaitingReview', label: 'Awaiting review' },
 ];
 
 export function AdminHome() {
   const { user } = useAuth();
   const [apiStatus, setApiStatus] = useState('checking');
+  const [stats, setStats] = useState(null);
+  const canViewStats = can(user, PERMISSIONS.DASHBOARD_STATS_VIEW);
 
   useEffect(() => {
     let active = true;
@@ -55,10 +101,17 @@ export function AdminHome() {
       .then(() => active && setApiStatus('online'))
       .catch(() => active && setApiStatus('offline'));
 
+    if (canViewStats) {
+      api
+        .get('/admin/dashboard')
+        .then(({ data }) => active && setStats(data.data))
+        .catch(() => active && setStats(null));
+    }
+
     return () => {
       active = false;
     };
-  }, []);
+  }, [canViewStats]);
 
   const badge =
     apiStatus === 'online'
@@ -67,9 +120,7 @@ export function AdminHome() {
         ? { variant: 'danger', label: 'API unreachable' }
         : { variant: 'neutral', label: 'Checking API' };
 
-  const sections = SECTIONS.filter(
-    (section) => !section.roles || section.roles.includes(user?.role),
-  );
+  const sections = SECTIONS.filter((section) => can(user, section.permission));
 
   return (
     <div className="space-y-6">
@@ -81,9 +132,8 @@ export function AdminHome() {
             </p>
             <h2 className="mt-2 font-display text-display-sm font-semibold">{user?.name}</h2>
             <p className="mt-2 max-w-xl text-sm text-cream-100/60">
-              Orders, reservations and business settings are managed from this workspace.
-              Delivery and online payments remain unavailable until they are verified and
-              configured.
+              Orders, reservations and business settings are managed from this workspace. Delivery
+              and online payments remain unavailable until they are verified and configured.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -97,7 +147,51 @@ export function AdminHome() {
         </div>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      {canViewStats ? (
+        <Card>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <CardTitle>Business at a glance</CardTitle>
+              <CardDescription>Live counts from the current restaurant data.</CardDescription>
+            </div>
+            {stats ? (
+              <Badge variant="neutral">Paid revenue {formatRwf(stats.summary.paidRevenue)}</Badge>
+            ) : null}
+          </div>
+          {stats ? (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {STAT_CARDS.map((stat) => (
+                <div key={stat.key} className="rounded-2xl bg-cream-100 p-4">
+                  <p className="text-2xl font-semibold text-cocoa-950">
+                    {stats.summary[stat.key] ?? 0}
+                  </p>
+                  <p className="mt-1 text-sm text-cocoa-600">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-5 text-sm text-cocoa-500">Statistics are unavailable right now.</p>
+          )}
+
+          {stats?.recentActivity?.length ? (
+            <div className="mt-5 border-t border-cocoa-900/10 pt-4">
+              <p className="text-sm font-semibold text-cocoa-800">Recent activity</p>
+              <ul className="mt-2 space-y-2 text-sm text-cocoa-600">
+                {stats.recentActivity.slice(0, 4).map((event) => (
+                  <li key={event.id}>
+                    <span className="font-medium text-cocoa-800">
+                      {event.actorEmail ?? 'System'}
+                    </span>{' '}
+                    {event.summary}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {sections.map((item) => (
           <Link
             key={item.to}
@@ -125,7 +219,10 @@ export function AdminHome() {
         </div>
         <div className="mt-5 grid gap-3 text-sm text-cocoa-600 sm:grid-cols-2">
           <p className="flex items-start gap-2">
-            <UtensilsCrossed className="mt-0.5 h-4 w-4 shrink-0 text-cocoa-400" aria-hidden="true" />
+            <UtensilsCrossed
+              className="mt-0.5 h-4 w-4 shrink-0 text-cocoa-400"
+              aria-hidden="true"
+            />
             New orders can be paused instantly without taking the menu offline.
           </p>
           <p className="flex items-start gap-2">

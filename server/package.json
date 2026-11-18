@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "create-admin": "node scripts/createAdmin.js",
-    "seed:menu": "node scripts/seedMenu.js"
+    "seed:menu": "node scripts/seedMenu.js",
+    "images:menu": "node scripts/prepareMenuImages.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

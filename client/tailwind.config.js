@@ -42,7 +42,7 @@ export default {
         info: '#3E5E7A',
       },
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'Cambria', 'serif'],
+        display: ['Cormorant Garamond', 'Georgia', 'Cambria', 'serif'],
         sans: [
           'Inter',
           'ui-sans-serif',

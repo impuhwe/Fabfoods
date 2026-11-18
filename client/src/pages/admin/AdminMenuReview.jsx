@@ -5,18 +5,26 @@ import Badge from '../../components/ui/Badge.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Checkbox from '../../components/ui/Checkbox.jsx';
 import ConfirmDialog from '../../components/ui/ConfirmDialog.jsx';
+import AdminMenuCatalogue from '../../components/admin/AdminMenuCatalogue.jsx';
+import MenuImageManager from '../../components/admin/MenuImageManager.jsx';
 import Field from '../../components/ui/Field.jsx';
 import Input, { inputClasses } from '../../components/ui/Input.jsx';
 import Select from '../../components/ui/Select.jsx';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import { getApiErrorMessage } from '../../lib/api.js';
 import { cn } from '../../lib/cn.js';
 import { formatDate, formatRwf } from '../../lib/format.js';
+import { can, PERMISSIONS } from '../../lib/permissions.js';
 import {
   archiveAdminMenuItem,
+  deleteAdminMenuImage,
   getAdminMenuCategories,
+  getAdminMenuImageStatus,
   getAdminMenuItems,
   getAdminReviewIssues,
   resolveAdminReviewIssue,
   restoreAdminMenuItem,
+  setAdminMenuItemAvailability,
   updateAdminMenuItem,
   verifyAdminMenuItem,
 } from '../../services/adminApi.js';
@@ -47,6 +55,8 @@ function toDraft(item) {
     sizeOptions: JSON.stringify(item.sizeOptions ?? [], null, 2),
     servingOptions: JSON.stringify(item.servingOptions ?? [], null, 2),
     addonGroups: JSON.stringify(item.addonGroups ?? [], null, 2),
+    image: item.image ?? null,
+    gallery: item.gallery ?? [],
     note: '',
   };
 }
@@ -58,6 +68,15 @@ function parseOptions(text, label) {
   return parsed;
 }
 
+function removedPublicIds(before, after) {
+  const retained = new Set(
+    after.map((media) => media?.publicId).filter((publicId) => Boolean(publicId)),
+  );
+  return before
+    .map((media) => media?.publicId)
+    .filter((publicId) => Boolean(publicId) && !retained.has(publicId));
+}
+
 function itemBadges(item) {
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -67,19 +86,20 @@ function itemBadges(item) {
         <Badge variant="warning">Unverified</Badge>
       )}
       {item.isArchived ? <Badge variant="danger">Archived</Badge> : null}
-      {item.hasUnresolvedBlockingIssues ? (
-        <Badge variant="danger">Unresolved issue</Badge>
-      ) : null}
+      {!item.image?.url ? <Badge variant="warning">No photo</Badge> : null}
+      {item.hasUnresolvedBlockingIssues ? <Badge variant="danger">Unresolved issue</Badge> : null}
       {!item.isAvailable && !item.isArchived ? <Badge variant="neutral">Unavailable</Badge> : null}
     </div>
   );
 }
 
 export function AdminMenuReview() {
+  const { user } = useAuth();
   const [filters, setFilters] = useState({ search: '', category: '', status: '' });
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [issues, setIssues] = useState([]);
+  const [imageStatus, setImageStatus] = useState(null);
   const [selectedId, setSelectedId] = useState('');
   const [draft, setDraft] = useState(null);
   const [issueNotes, setIssueNotes] = useState({});
@@ -89,19 +109,28 @@ export function AdminMenuReview() {
   const [notice, setNotice] = useState('');
   const [confirm, setConfirm] = useState(null);
 
+  const canEdit = can(user, PERMISSIONS.MENU_ITEMS_UPDATE);
+  const canVerify = can(user, PERMISSIONS.MENU_ITEMS_VERIFY);
+  const canArchive = can(user, PERMISSIONS.MENU_ITEMS_ARCHIVE);
+  const canRestore = can(user, PERMISSIONS.MENU_ITEMS_RESTORE);
+  const canManageImages = can(user, PERMISSIONS.MENU_IMAGES_MANAGE);
+  const canResolveIssues = can(user, PERMISSIONS.MENU_ISSUES_RESOLVE);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value));
-      const [itemResult, categoryList, issueList] = await Promise.all([
+      const [itemResult, categoryList, issueList, status] = await Promise.all([
         getAdminMenuItems(params),
         getAdminMenuCategories(),
         getAdminReviewIssues(),
+        getAdminMenuImageStatus(),
       ]);
       setItems(itemResult.items);
       setCategories(categoryList);
       setIssues(issueList);
+      setImageStatus(status);
     } catch (loadError) {
       setError(loadError.message);
     } finally {
@@ -133,6 +162,10 @@ export function AdminMenuReview() {
     setDraft((current) => (current ? { ...current, [field]: value } : current));
   }
 
+  function updateDraftMedia(patch) {
+    setDraft((current) => (current ? { ...current, ...patch } : current));
+  }
+
   function requestConfirm(config) {
     setNotice('');
     setError('');
@@ -158,6 +191,8 @@ export function AdminMenuReview() {
     setError('');
     setNotice('');
     try {
+      const nextImage = draft.image ?? null;
+      const nextGallery = draft.gallery ?? [];
       const payload = {
         name: draft.name,
         description: draft.description,
@@ -169,9 +204,18 @@ export function AdminMenuReview() {
         sizeOptions: parseOptions(draft.sizeOptions, 'sizeOptions'),
         servingOptions: parseOptions(draft.servingOptions, 'servingOptions'),
         addonGroups: parseOptions(draft.addonGroups, 'addonGroups'),
+        image: nextImage,
+        gallery: nextGallery,
         note: draft.note,
       };
       const updated = await updateAdminMenuItem(selectedItem.id, payload);
+      const stalePublicIds = removedPublicIds(
+        [selectedItem.image, ...(selectedItem.gallery ?? [])],
+        [updated.image, ...(updated.gallery ?? [])],
+      );
+      if (stalePublicIds.length) {
+        await Promise.allSettled(stalePublicIds.map(deleteAdminMenuImage));
+      }
       setDraft(toDraft(updated));
       setNotice('Menu item saved. Staff review is still required before publishing.');
       await load();
@@ -265,6 +309,22 @@ export function AdminMenuReview() {
     }
   }
 
+  async function changeAvailability(isAvailable) {
+    if (!selectedItem) return;
+    setBusy(true);
+    setError('');
+    try {
+      const updated = await setAdminMenuItemAvailability(selectedItem.id, isAvailable);
+      setDraft(toDraft(updated));
+      setNotice(`${updated.name} availability updated.`);
+      await load();
+    } catch (availabilityError) {
+      setError(getApiErrorMessage(availabilityError, 'Availability could not be updated.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -280,9 +340,14 @@ export function AdminMenuReview() {
             staff verification. Every action is recorded.
           </p>
         </div>
-        <Badge variant={unresolvedIssues.length ? 'warning' : 'success'} dot>
-          {unresolvedIssues.length} unresolved issue{unresolvedIssues.length === 1 ? '' : 's'}
-        </Badge>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={unresolvedIssues.length ? 'warning' : 'success'} dot>
+            {unresolvedIssues.length} unresolved issue{unresolvedIssues.length === 1 ? '' : 's'}
+          </Badge>
+          <Badge variant={imageStatus?.configured ? 'success' : 'warning'} dot>
+            {imageStatus?.configured ? 'Cloudinary ready' : 'Cloudinary not configured'}
+          </Badge>
+        </div>
       </div>
 
       {error ? (
@@ -319,7 +384,9 @@ export function AdminMenuReview() {
         <Field label="Search">
           <Input
             value={filters.search}
-            onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
+            onChange={(event) =>
+              setFilters((current) => ({ ...current, search: event.target.value }))
+            }
             placeholder="Name, slug or description"
           />
         </Field>
@@ -354,6 +421,8 @@ export function AdminMenuReview() {
         </Field>
       </div>
 
+      <AdminMenuCatalogue categories={categories} onChanged={load} />
+
       <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <div className="rounded-2xl border border-cocoa-900/10 bg-white">
           <div className="border-b border-cocoa-900/10 px-5 py-4">
@@ -380,7 +449,9 @@ export function AdminMenuReview() {
                       {item.category?.name ?? 'Uncategorised'} · {formatRwf(item.price)}
                     </p>
                   </div>
-                  <span className="text-xs font-medium text-cocoa-500">p.{item.sourcePage ?? '—'}</span>
+                  <span className="text-xs font-medium text-cocoa-500">
+                    p.{item.sourcePage ?? '—'}
+                  </span>
                 </div>
                 {itemBadges(item)}
               </button>
@@ -434,7 +505,10 @@ export function AdminMenuReview() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Name" required>
-                  <Input value={draft.name} onChange={(event) => updateDraft('name', event.target.value)} />
+                  <Input
+                    value={draft.name}
+                    onChange={(event) => updateDraft('name', event.target.value)}
+                  />
                 </Field>
                 <Field label="Price (RWF)" required>
                   <Input
@@ -469,6 +543,15 @@ export function AdminMenuReview() {
                   onChange={(event) => updateDraft('description', event.target.value)}
                 />
               </Field>
+
+              <MenuImageManager
+                itemName={selectedItem.name}
+                image={draft.image}
+                gallery={draft.gallery}
+                enabled={canManageImages && Boolean(imageStatus?.configured)}
+                disabled={busy}
+                onChange={updateDraftMedia}
+              />
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Display order">
@@ -515,7 +598,10 @@ export function AdminMenuReview() {
                 </Field>
               ))}
 
-              <Field label="Review note" hint="Added to the item's source note when you save or publish.">
+              <Field
+                label="Review note"
+                hint="Added to the item's source note when you save or publish."
+              >
                 <Input
                   value={draft.note}
                   onChange={(event) => updateDraft('note', event.target.value)}
@@ -524,29 +610,42 @@ export function AdminMenuReview() {
               </Field>
 
               <div className="flex flex-wrap gap-3 border-t border-cocoa-900/10 pt-5">
-                <Button type="submit" loading={busy}>
-                  <Save className="h-4 w-4" aria-hidden="true" />
-                  Save changes
-                </Button>
-                {selectedItem.verified ? (
-                  <Button type="button" variant="secondary" onClick={requestArchive} disabled={busy}>
+                {canEdit ? (
+                  <Button type="submit" loading={busy}>
+                    <Save className="h-4 w-4" aria-hidden="true" />
+                    Save changes
+                  </Button>
+                ) : null}
+                {selectedItem.verified && !selectedItem.isArchived && canArchive ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={requestArchive}
+                    disabled={busy}
+                  >
                     Archive item
                   </Button>
-                ) : (
+                ) : null}
+                {!selectedItem.verified && !selectedItem.isArchived && canVerify ? (
                   <Button type="button" onClick={requestVerification} disabled={busy}>
                     <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                     Verify & publish
                   </Button>
-                )}
-                {selectedItem.isArchived ? (
+                ) : null}
+                {selectedItem.isArchived && canRestore ? (
+                  <Button type="button" variant="secondary" onClick={handleRestore} disabled={busy}>
+                    <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                    Restore item
+                  </Button>
+                ) : null}
+                {canEdit && selectedItem.verified && !selectedItem.isArchived ? (
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={handleRestore}
+                    onClick={() => changeAvailability(!selectedItem.isAvailable)}
                     disabled={busy}
                   >
-                    <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                    Restore item
+                    {selectedItem.isAvailable ? 'Pause availability' : 'Make available'}
                   </Button>
                 ) : null}
               </div>
@@ -587,7 +686,8 @@ export function AdminMenuReview() {
                     {issue.item} · {issue.sourcePdf} p.{issue.sourcePage}
                   </p>
                   <p className="mt-1 text-xs text-cocoa-500">
-                    Affected: {issue.affectedSlugs.length
+                    Affected:{' '}
+                    {issue.affectedSlugs.length
                       ? issue.affectedSlugs.join(', ')
                       : issue.affectedCategorySlugs.join(', ') || 'none'}
                   </p>
@@ -595,48 +695,49 @@ export function AdminMenuReview() {
                     <p className="mt-2 text-sm text-success">Resolved: {issue.resolution}</p>
                   ) : null}
                 </div>
-                <div className="flex w-full flex-col gap-2 sm:w-72">
-                  {issue.status !== 'resolved' ? (
-                    <Input
-                      value={issueNotes[issue.id] ?? ''}
-                      onChange={(event) =>
-                        setIssueNotes((current) => ({ ...current, [issue.id]: event.target.value }))
-                      }
-                      placeholder="Resolution note"
-                      aria-label={`Resolution note for ${issue.issueId}`}
-                    />
-                  ) : null}
-                  <div className="flex flex-wrap gap-2">
+                {canResolveIssues ? (
+                  <div className="flex w-full flex-col gap-2 sm:w-72">
                     {issue.status !== 'resolved' ? (
-                      <>
-                        <Button
-                          size="sm"
-                          onClick={() => requestResolve(issue)}
-                          disabled={busy}
-                        >
-                          Resolve
-                        </Button>
+                      <Input
+                        value={issueNotes[issue.id] ?? ''}
+                        onChange={(event) =>
+                          setIssueNotes((current) => ({
+                            ...current,
+                            [issue.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="Resolution note"
+                        aria-label={`Resolution note for ${issue.issueId}`}
+                      />
+                    ) : null}
+                    <div className="flex flex-wrap gap-2">
+                      {issue.status !== 'resolved' ? (
+                        <>
+                          <Button size="sm" onClick={() => requestResolve(issue)} disabled={busy}>
+                            Resolve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => markInProgress(issue)}
+                            disabled={busy}
+                          >
+                            In progress
+                          </Button>
+                        </>
+                      ) : (
                         <Button
                           size="sm"
                           variant="secondary"
                           onClick={() => markInProgress(issue)}
                           disabled={busy}
                         >
-                          In progress
+                          Reopen
                         </Button>
-                      </>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => markInProgress(issue)}
-                        disabled={busy}
-                      >
-                        Reopen
-                      </Button>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
+                ) : null}
               </div>
             </div>
           ))}

@@ -44,7 +44,11 @@ async function confirmPaidOrder(transaction, verification) {
     {
       _id: transaction._id,
       status: {
-        $in: [PAYMENT_STATUSES.PENDING, PAYMENT_STATUSES.REQUIRES_ACTION, PAYMENT_STATUSES.PROCESSING],
+        $in: [
+          PAYMENT_STATUSES.PENDING,
+          PAYMENT_STATUSES.REQUIRES_ACTION,
+          PAYMENT_STATUSES.PROCESSING,
+        ],
       },
     },
     {
@@ -59,7 +63,11 @@ async function confirmPaidOrder(transaction, verification) {
   );
 
   if (!claimed) {
-    return { transaction: await PaymentTransaction.findById(transaction._id), order, alreadyPaid: true };
+    return {
+      transaction: await PaymentTransaction.findById(transaction._id),
+      order,
+      alreadyPaid: true,
+    };
   }
 
   if (order.paymentStatus !== PAYMENT_STATUSES.PAID) {
@@ -144,7 +152,9 @@ export async function initiatePayment(order, { redirectUrl } = {}) {
 }
 
 export async function verifyPayment(order) {
-  const transaction = await PaymentTransaction.findOne({ order: order._id }).sort({ createdAt: -1 });
+  const transaction = await PaymentTransaction.findOne({ order: order._id }).sort({
+    createdAt: -1,
+  });
   if (!transaction) throw notFound('No payment has been started for this order');
   if (transaction.status === PAYMENT_STATUSES.PAID) {
     return { transaction: publicTransaction(transaction), order, alreadyPaid: true };
@@ -193,7 +203,11 @@ export async function handlePaymentWebhook(providerName, req) {
   const provider = getPaymentProvider(providerName);
   if (!provider?.isConfigured()) throw notFound('Unknown payment provider');
 
-  const event = provider.verifyWebhook({ headers: req.headers, body: req.body });
+  const event = provider.verifyWebhook({
+    headers: req.headers,
+    body: req.body,
+    rawBody: req.rawBody,
+  });
   if (!event) throw forbidden('Invalid payment webhook signature', 'INVALID_WEBHOOK');
 
   const transaction = await PaymentTransaction.findOne({

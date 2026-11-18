@@ -30,6 +30,10 @@ export function errorHandler(error, req, res, _next) {
     statusCode = 400;
     code = 'VALIDATION_ERROR';
     message = 'Please check the submitted fields';
+  } else if (error instanceof mongoose.Error.CastError) {
+    statusCode = 400;
+    code = 'VALIDATION_ERROR';
+    message = `Invalid ${error.path}`;
   }
 
   if (statusCode >= 500) {

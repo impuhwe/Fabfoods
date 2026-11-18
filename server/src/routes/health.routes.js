@@ -4,13 +4,16 @@ import { sendSuccess } from '../utils/response.js';
 
 const router = Router();
 
-router.get('/live', (_req, res) => {
+function liveness(_req, res) {
   sendSuccess(res, {
     status: 'ok',
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
   });
-});
+}
+
+router.get('/', liveness);
+router.get('/live', liveness);
 
 router.get('/ready', async (req, res) => {
   const ready = await isDatabaseReady();

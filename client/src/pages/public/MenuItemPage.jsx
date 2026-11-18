@@ -7,12 +7,14 @@ import Skeleton from '../../components/ui/Skeleton.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import QuantityStepper from '../../components/public/QuantityStepper.jsx';
 import MenuItemCard from '../../components/public/MenuItemCard.jsx';
+import MenuImage from '../../components/public/MenuImage.jsx';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { useCart } from '../../contexts/CartContext.jsx';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { formatRwf } from '../../lib/format.js';
 import { getApiErrorMessage } from '../../lib/api.js';
 import { menuItemImage } from '../../lib/imagery.js';
+import { validateMenuItemSelection } from '../../lib/menuSelection.js';
 import { getMenuItem, getMenuItems } from '../../services/publicApi.js';
 
 function OptionRow({ type, name, checked, onChange, title, note, price }) {
@@ -161,17 +163,10 @@ export function MenuItemPage() {
   function addToOrder() {
     if (!item) return;
 
-    for (const group of item.servingOptions ?? []) {
-      if (group.isRequired && !(serving[group.name] ?? []).length) {
-        setFormError(`Choose an option for ${group.name}.`);
-        return;
-      }
-    }
-    for (const group of item.addonGroups ?? []) {
-      if (group.isRequired && !(addons[group.name] ?? []).length) {
-        setFormError(`Choose an option for ${group.name}.`);
-        return;
-      }
+    const selectionError = validateMenuItemSelection(item, { sizeLabel, serving, addons });
+    if (selectionError) {
+      setFormError(selectionError);
+      return;
     }
 
     const servingSelections = Object.entries(serving).flatMap(([groupName, options]) =>
@@ -187,7 +182,11 @@ export function MenuItemPage() {
     ].filter(Boolean);
 
     addItem(
-      { ...item, image: menuItemImage(item) },
+      {
+        ...item,
+        image: menuItemImage(item),
+        imageAlt: item.image?.alt || `Illustrative image for ${item.name}`,
+      },
       {
         quantity,
         sizeLabel: sizeLabel || undefined,
@@ -244,11 +243,7 @@ export function MenuItemPage() {
         <div className="mt-6 grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
           <div>
             <div className="overflow-hidden rounded-2xl bg-cream-200">
-              <img
-                src={menuItemImage(item)}
-                alt={item.name}
-                className="aspect-square w-full object-cover"
-              />
+              <MenuImage item={item} priority className="aspect-square w-full object-cover" />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Badge variant={item.isOrderable ? 'success' : 'neutral'} dot>
@@ -322,7 +317,10 @@ export function MenuItemPage() {
                               type="radio"
                               name={`size-${item.id}`}
                               checked={sizeLabel === option.label}
-                              onChange={() => setSizeLabel(option.label)}
+                              onChange={() => {
+                                setFormError('');
+                                setSizeLabel(option.label);
+                              }}
                               className="h-4 w-4 accent-ember-600"
                             />
                             {option.label}

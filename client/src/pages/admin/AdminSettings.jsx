@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
+import Badge from '../../components/ui/Badge.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Checkbox from '../../components/ui/Checkbox.jsx';
 import Field from '../../components/ui/Field.jsx';
 import Input from '../../components/ui/Input.jsx';
 import Skeleton from '../../components/ui/Skeleton.jsx';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { getApiErrorMessage } from '../../lib/api.js';
+import { can, PERMISSIONS } from '../../lib/permissions.js';
 import { getAdminSettings, updateAdminSettings } from '../../services/adminApi.js';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -93,6 +96,7 @@ function normalizeDraft(settings) {
 }
 
 export function AdminSettings() {
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [draft, setDraft] = useState(null);
   const [onlineReady, setOnlineReady] = useState(false);
@@ -100,6 +104,10 @@ export function AdminSettings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+
+  const canUpdate = can(user, PERMISSIONS.SETTINGS_UPDATE);
+  const canSensitive = can(user, PERMISSIONS.SETTINGS_SENSITIVE_UPDATE);
+  const canApprove = can(user, PERMISSIONS.SETTINGS_VERIFICATION_APPROVE);
 
   useEffect(() => {
     let active = true;
@@ -193,7 +201,6 @@ export function AdminSettings() {
         })),
         fulfillment: {
           pickupEnabled: draft.fulfillment.pickupEnabled,
-          deliveryEnabled: draft.fulfillment.deliveryEnabled,
           orderingPaused: draft.fulfillment.orderingPaused,
           pickupEtaMinutes:
             draft.fulfillment.pickupEtaMinutes === ''
@@ -210,8 +217,9 @@ export function AdminSettings() {
             minOrder: Number(zone.minOrder || 0),
             etaMinutes: zone.etaMinutes === '' ? null : Number(zone.etaMinutes),
             isActive: zone.isActive,
-            isVerified: zone.isVerified,
+            ...(canSensitive ? { isVerified: zone.isVerified } : {}),
           })),
+          ...(canSensitive ? { deliveryEnabled: draft.fulfillment.deliveryEnabled } : {}),
         },
         reservations: {
           enabled: draft.reservations.enabled,
@@ -222,10 +230,14 @@ export function AdminSettings() {
         payments: {
           currency: draft.payments.currency,
           acceptedMethods: draft.payments.acceptedMethods,
-          enabledMethods: draft.payments.enabledMethods,
-          onlineEnabled: draft.payments.onlineEnabled,
+          ...(canSensitive
+            ? {
+                enabledMethods: draft.payments.enabledMethods,
+                onlineEnabled: draft.payments.onlineEnabled,
+              }
+            : {}),
         },
-        verification: draft.verification,
+        ...(canApprove ? { verification: draft.verification } : {}),
       };
       const result = await updateAdminSettings(payload);
       setDraft(normalizeDraft(result.settings));
@@ -263,14 +275,18 @@ export function AdminSettings() {
         <div>
           <h2 className="font-display text-2xl font-semibold text-cocoa-950">Business settings</h2>
           <p className="mt-1 max-w-2xl text-sm text-cocoa-600">
-            Only approved information is shown on the public site. Delivery and online payments
-            stay unavailable until verified and configured.
+            Only approved information is shown on the public site. Delivery and online payments stay
+            unavailable until verified and configured.
           </p>
         </div>
-        <Button onClick={save} loading={saving}>
-          <Save className="h-4 w-4" aria-hidden="true" />
-          Save settings
-        </Button>
+        {canUpdate ? (
+          <Button onClick={save} loading={saving}>
+            <Save className="h-4 w-4" aria-hidden="true" />
+            Save settings
+          </Button>
+        ) : (
+          <Badge variant="neutral">Read-only</Badge>
+        )}
       </div>
 
       {error ? (
@@ -296,6 +312,7 @@ export function AdminSettings() {
             id="contact-approved"
             label="Approved for public site"
             checked={draft.verification.contactApproved}
+            disabled={!canApprove}
             onChange={(event) =>
               patchSection('verification', { contactApproved: event.target.checked })
             }
@@ -342,6 +359,7 @@ export function AdminSettings() {
             id="hours-approved"
             label="Approved for public site"
             checked={draft.verification.hoursApproved}
+            disabled={!canApprove}
             onChange={(event) =>
               patchSection('verification', { hoursApproved: event.target.checked })
             }
@@ -402,8 +420,13 @@ export function AdminSettings() {
           <Checkbox
             id="delivery-enabled"
             label="Delivery enabled"
-            description="Requires approved delivery zones."
+            description={
+              canSensitive
+                ? 'Requires approved delivery zones.'
+                : 'Only administrators can change sensitive delivery settings.'
+            }
             checked={draft.fulfillment.deliveryEnabled}
+            disabled={!canSensitive}
             onChange={(event) =>
               patchSection('fulfillment', { deliveryEnabled: event.target.checked })
             }
@@ -412,6 +435,7 @@ export function AdminSettings() {
             id="delivery-approved"
             label="Delivery zones approved"
             checked={draft.verification.deliveryApproved}
+            disabled={!canApprove}
             onChange={(event) =>
               patchSection('verification', { deliveryApproved: event.target.checked })
             }
@@ -432,9 +456,7 @@ export function AdminSettings() {
               type="number"
               min="0"
               value={draft.fulfillment.minOrder}
-              onChange={(event) =>
-                patchSection('fulfillment', { minOrder: event.target.value })
-              }
+              onChange={(event) => patchSection('fulfillment', { minOrder: event.target.value })}
             />
           </Field>
         </div>
@@ -495,9 +517,7 @@ export function AdminSettings() {
                       min="0"
                       max="240"
                       value={zone.etaMinutes}
-                      onChange={(event) =>
-                        patchZone(index, { etaMinutes: event.target.value })
-                      }
+                      onChange={(event) => patchZone(index, { etaMinutes: event.target.value })}
                     />
                   </Field>
                 </div>
@@ -507,17 +527,14 @@ export function AdminSettings() {
                       id={`zone-active-${index}`}
                       label="Active"
                       checked={zone.isActive}
-                      onChange={(event) =>
-                        patchZone(index, { isActive: event.target.checked })
-                      }
+                      onChange={(event) => patchZone(index, { isActive: event.target.checked })}
                     />
                     <Checkbox
                       id={`zone-verified-${index}`}
                       label="Verified"
                       checked={zone.isVerified}
-                      onChange={(event) =>
-                        patchZone(index, { isVerified: event.target.checked })
-                      }
+                      disabled={!canSensitive}
+                      onChange={(event) => patchZone(index, { isVerified: event.target.checked })}
                     />
                   </div>
                   <Button size="sm" variant="ghost" onClick={() => removeZone(index)}>
@@ -539,9 +556,7 @@ export function AdminSettings() {
               id="reservations-enabled"
               label="Accept table requests"
               checked={draft.reservations.enabled}
-              onChange={(event) =>
-                patchSection('reservations', { enabled: event.target.checked })
-              }
+              onChange={(event) => patchSection('reservations', { enabled: event.target.checked })}
             />
           </div>
           <Field label="Maximum party size">
@@ -572,16 +587,13 @@ export function AdminSettings() {
             <textarea
               rows={3}
               value={draft.reservations.policyText}
-              onChange={(event) =>
-                patchSection('reservations', { policyText: event.target.value })
-              }
+              onChange={(event) => patchSection('reservations', { policyText: event.target.value })}
               className="w-full rounded-lg border border-cocoa-900/15 bg-white px-3 py-2 text-sm text-cocoa-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember-400"
             />
           </Field>
         </div>
         <p className="mt-3 text-xs text-cocoa-500">
-          Requests always stay pending until staff approve them. Automatic confirmation is
-          disabled.
+          Requests always stay pending until staff approve them. Automatic confirmation is disabled.
         </p>
       </section>
 
@@ -607,6 +619,7 @@ export function AdminSettings() {
               id="payments-approved"
               label="Payment setup approved"
               checked={draft.verification.paymentsApproved}
+              disabled={!canApprove}
               onChange={(event) =>
                 patchSection('verification', { paymentsApproved: event.target.checked })
               }
@@ -640,9 +653,13 @@ export function AdminSettings() {
                     id={`enabled-${method.value}`}
                     label={method.label}
                     description={
-                      blocked ? 'Unavailable until the online provider is configured.' : undefined
+                      blocked
+                        ? 'Unavailable until the online provider is configured.'
+                        : method.online && !canSensitive
+                          ? 'Only administrators can enable online methods.'
+                          : undefined
                     }
-                    disabled={blocked}
+                    disabled={blocked || !canSensitive}
                     checked={draft.payments.enabledMethods.includes(method.value)}
                     onChange={() => toggleMethod('enabledMethods', method.value)}
                   />
@@ -661,21 +678,21 @@ export function AdminSettings() {
                 ? 'Provider is configured and ready.'
                 : 'Provider is not configured; online methods cannot be enabled.'
             }
-            disabled={!onlineReady}
+            disabled={!onlineReady || !canSensitive}
             checked={draft.payments.onlineEnabled}
-            onChange={(event) =>
-              patchSection('payments', { onlineEnabled: event.target.checked })
-            }
+            onChange={(event) => patchSection('payments', { onlineEnabled: event.target.checked })}
           />
         </div>
       </section>
 
-      <div className="flex justify-end">
-        <Button onClick={save} loading={saving}>
-          <Save className="h-4 w-4" aria-hidden="true" />
-          Save settings
-        </Button>
-      </div>
+      {canUpdate ? (
+        <div className="flex justify-end">
+          <Button onClick={save} loading={saving}>
+            <Save className="h-4 w-4" aria-hidden="true" />
+            Save settings
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

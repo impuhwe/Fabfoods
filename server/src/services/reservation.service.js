@@ -198,8 +198,13 @@ export async function cancelReservation(reference, actor = {}, reason = '') {
   if (!reservation) throw notFound('Reservation not found');
   assertCanView(reservation, actor);
 
-  if (![RESERVATION_STATUSES.PENDING, RESERVATION_STATUSES.CONFIRMED].includes(reservation.status)) {
-    throw conflict('This reservation can no longer be cancelled online', 'RESERVATION_NOT_CANCELLABLE');
+  if (
+    ![RESERVATION_STATUSES.PENDING, RESERVATION_STATUSES.CONFIRMED].includes(reservation.status)
+  ) {
+    throw conflict(
+      'This reservation can no longer be cancelled online',
+      'RESERVATION_NOT_CANCELLABLE',
+    );
   }
 
   reservation.status = RESERVATION_STATUSES.CANCELLED;
@@ -219,6 +224,53 @@ export async function cancelReservation(reference, actor = {}, reason = '') {
   });
 
   return toPublicReservation(reservation);
+}
+
+export async function getAdminReservation(id) {
+  const reservation = await Reservation.findById(id);
+  if (!reservation) throw notFound('Reservation not found');
+  return toAdminReservation(reservation);
+}
+
+export async function rescheduleAdminReservation(id, input, adminId) {
+  const reservation = await Reservation.findById(id);
+  if (!reservation) throw notFound('Reservation not found');
+
+  if (
+    ![RESERVATION_STATUSES.PENDING, RESERVATION_STATUSES.CONFIRMED].includes(reservation.status)
+  ) {
+    throw conflict(
+      'This reservation can no longer be rescheduled',
+      'RESERVATION_NOT_RESCHEDULABLE',
+    );
+  }
+
+  const settings = await getSettings();
+  if (input.partySize > settings.reservations.maxPartySize) {
+    throw badRequest(
+      `For parties over ${settings.reservations.maxPartySize}, please contact the restaurant directly`,
+    );
+  }
+
+  const latest = new Date(Date.now() + settings.reservations.maxDaysAhead * 24 * 60 * 60 * 1000);
+  const latestDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(latest);
+  if (input.date > latestDate) {
+    throw badRequest(`Choose a date within the next ${settings.reservations.maxDaysAhead} days`);
+  }
+
+  reservation.date = input.date;
+  reservation.time = input.time;
+  reservation.partySize = input.partySize;
+  reservation.startAt = new Date(`${input.date}T${input.time}:00+02:00`);
+  addHistory(
+    reservation,
+    reservation.status,
+    input.note || 'Reservation rescheduled by staff',
+    adminId,
+  );
+  await reservation.save();
+
+  return toAdminReservation(reservation);
 }
 
 export async function updateReservationStatus(id, status, note, adminId) {

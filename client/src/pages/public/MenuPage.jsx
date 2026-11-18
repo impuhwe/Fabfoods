@@ -308,7 +308,8 @@ export function MenuPage() {
           <p className="mt-1">
             Menu names and prices come from the restaurant&apos;s printed menus. Items marked
             “Awaiting confirmation” cannot be added to an online order until the owner confirms
-            them. No descriptions, ingredients or allergens have been invented.
+            them. No descriptions, ingredients or allergens have been invented. Menu images are
+            illustrative stock photography, not photographs of dishes prepared by FAB FOODS.
           </p>
           <Link to="/contact" className="mt-2 inline-block font-semibold text-ember-700 underline">
             Ask about a dish

@@ -30,6 +30,7 @@ export async function changePassword(userId, sessionId, currentPassword, newPass
 
   user.passwordHash = await bcrypt.hash(newPassword, env.BCRYPT_ROUNDS);
   user.passwordChangedAt = new Date();
+  user.mustChangePassword = false;
   await user.save();
 
   await Session.updateMany(

@@ -3,6 +3,8 @@ import { ShoppingBag, Trash2 } from 'lucide-react';
 import Drawer from '../ui/Drawer.jsx';
 import Button from '../ui/Button.jsx';
 import QuantityStepper from './QuantityStepper.jsx';
+import ResolvedImage from './MenuImage.jsx';
+import { categoryImage } from '../../lib/imagery.js';
 import { formatRwf } from '../../lib/format.js';
 import { useCart } from '../../contexts/CartContext.jsx';
 
@@ -31,9 +33,10 @@ export function CartDrawer() {
           <ul className="divide-y divide-cocoa-900/10">
             {items.map((line) => (
               <li key={line.id} className="flex gap-3 py-4 first:pt-0">
-                <img
+                <ResolvedImage
                   src={line.image}
-                  alt=""
+                  fallback={categoryImage(line.categorySlug)}
+                  alt={line.imageAlt ?? ''}
                   className="h-20 w-20 shrink-0 rounded-lg object-cover"
                 />
                 <div className="min-w-0 flex-1">
@@ -64,7 +67,7 @@ export function CartDrawer() {
                       label={line.name}
                       className="h-9 [&>button]:h-9 [&>button]:w-9"
                     />
-                    <p className="text-sm font-semibold tabular-nums text-cocoa-900">
+                    <p className="font-price text-base font-semibold text-cocoa-900">
                       {formatRwf(line.unitPrice * line.quantity)}
                     </p>
                   </div>
@@ -76,7 +79,7 @@ export function CartDrawer() {
           <div className="mt-6 border-t border-cocoa-900/10 pt-4">
             <div className="flex items-center justify-between text-sm">
               <span className="text-cocoa-600">Subtotal</span>
-              <span className="font-semibold tabular-nums text-cocoa-950">
+              <span className="font-price text-lg font-semibold text-cocoa-950">
                 {formatRwf(subtotal)}
               </span>
             </div>
