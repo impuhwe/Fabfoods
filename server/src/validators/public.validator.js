@@ -58,10 +58,6 @@ export const quoteLineSchema = z
 export const deliveryAddressSchema = z
   .object({
     line1: z.string().trim().max(160).default(''),
-    line2: z.string().trim().max(160).default(''),
-    city: z.string().trim().max(80).default(''),
-    district: z.string().trim().max(80).default(''),
-    sector: z.string().trim().max(80).default(''),
     notes: z.string().trim().max(240).default(''),
   })
   .strict();
@@ -92,6 +88,8 @@ export const reservationSchema = z
       .max(20, 'Use the contact form for parties over 20'),
     occasion: z.string().trim().max(80).default(''),
     specialRequests: z.string().trim().max(600).default(''),
+    preparationNotes: z.string().trim().max(500).default(''),
+    menuSelections: z.array(quoteLineSchema).max(50).default([]),
   })
   .strict();
 

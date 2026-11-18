@@ -35,6 +35,16 @@ export async function sendContactMessage(payload) {
   return data.data;
 }
 
+export async function submitCateringRequest(payload) {
+  const { data } = await api.post('/catering', payload);
+  return data.data;
+}
+
+export async function acceptAdminInvitation(payload) {
+  const { data } = await api.post('/invitations/accept', payload);
+  return data.data;
+}
+
 export async function quoteOrder(payload) {
   const { data } = await api.post('/orders/quote', payload);
   return data.data.quote;

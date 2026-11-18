@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle2, Mail, MapPin, MessageCircle } from 'lucide-react';
@@ -97,8 +98,15 @@ export function ContactPage() {
             </p>
             <p className="mt-2 text-sm leading-relaxed text-cocoa-600">
               For a table request, use the reservations page so the restaurant gets the date, time
-              and party size in the right format.
+              and party size in the right format. For a catered event, use the catering request
+              form.
             </p>
+            <Link
+              to="/catering"
+              className="mt-3 inline-block text-sm font-semibold text-ember-700 underline"
+            >
+              Send a catering request
+            </Link>
           </div>
         </aside>
 

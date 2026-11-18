@@ -3,8 +3,6 @@ import { ShoppingBag, Trash2 } from 'lucide-react';
 import Button from '../../components/ui/Button.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import QuantityStepper from '../../components/public/QuantityStepper.jsx';
-import ResolvedImage from '../../components/public/MenuImage.jsx';
-import { categoryImage } from '../../lib/imagery.js';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { useCart } from '../../contexts/CartContext.jsx';
 import { formatRwf } from '../../lib/format.js';
@@ -57,13 +55,7 @@ export function CartPage() {
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
         <ul className="divide-y divide-cocoa-900/10 border-y border-cocoa-900/10">
           {items.map((line) => (
-            <li key={line.id} className="flex gap-4 py-5">
-              <ResolvedImage
-                src={line.image}
-                fallback={categoryImage(line.categorySlug)}
-                alt={line.imageAlt ?? ''}
-                className="h-24 w-24 shrink-0 rounded-lg object-cover"
-              />
+            <li key={line.id} className="py-5">
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-3">
                   <div>

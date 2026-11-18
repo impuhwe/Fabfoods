@@ -14,7 +14,10 @@
   "design": {
     "colorMode": "unknown",
     "colors": {},
-    "typography": {},
+    "typography": {
+      "body": "Inter",
+      "display": "Cardo"
+    },
     "spacing": {},
     "radius": {},
     "shadows": {},
@@ -33,7 +36,7 @@
   "decisions": [
     {
       "title": "Customer typography",
-      "choice": "Use Cormorant Garamond for customer display headings, navigation, prices and promo copy; keep Inter for dense utility text."
+      "choice": "Use Inter for body, navigation, buttons, forms, labels and general UI; use Cardo for editorial display headings and selected display copy."
     }
   ],
   "evidence": [],

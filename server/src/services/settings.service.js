@@ -6,8 +6,8 @@ import { badRequest } from '../utils/errors.js';
 function onlinePaymentsReady(settings) {
   return Boolean(
     settings.payments.onlineEnabled &&
-      settings.verification.paymentsApproved &&
-      isPaymentProviderConfigured(),
+    settings.verification.paymentsApproved &&
+    isPaymentProviderConfigured(),
   );
 }
 
@@ -55,9 +55,7 @@ function assertSafeConfiguration(settings) {
       !settings.verification.paymentsApproved ||
       !isPaymentProviderConfigured())
   ) {
-    throw badRequest(
-      'Online payment methods require an approved, configured payment provider',
-    );
+    throw badRequest('Online payment methods require an approved, configured payment provider');
   }
 }
 
@@ -161,10 +159,7 @@ export function resolveDeliveryQuote(settings, { subtotal, address } = {}) {
     };
   }
 
-  const addressText = [address?.line1, address?.line2, address?.city, address?.district, address?.sector]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+  const addressText = (address?.line1 ?? '').toLowerCase();
 
   if (!addressText) {
     return {

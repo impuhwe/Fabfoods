@@ -1,5 +1,11 @@
 ﻿import { Router } from 'express';
 import { requireAuth, requirePermission } from '../middleware/auth.js';
+import { list as cateringRequests } from '../controllers/catering.controller.js';
+import {
+  create as createInvitation,
+  list as listInvitations,
+  revoke as revokeInvitation,
+} from '../controllers/invitation.controller.js';
 import { validate } from '../middleware/validate.js';
 import { validateObjectId } from '../middleware/validateObjectId.js';
 import { PERMISSIONS } from '../config/permissions.js';
@@ -38,6 +44,7 @@ import {
   updateMenuItem,
   updateOrderPayment,
   updateOrderStatus,
+  updateReservationSelectionStatus,
   updateReservationStatus,
   updateStaff,
   verifyMenuItem,
@@ -57,8 +64,15 @@ import {
 } from '../validators/order.validator.js';
 import {
   adminReservationQuerySchema,
+  adminReservationSelectionStatusSchema,
   adminReservationStatusSchema,
 } from '../validators/reservation.validator.js';
+import { adminCateringQuerySchema } from '../validators/catering.validator.js';
+import {
+  adminInvitationQuerySchema,
+  createAdminInvitationSchema,
+  revokeAdminInvitationSchema,
+} from '../validators/invitation.validator.js';
 import { updateSettingsSchema } from '../validators/settings.validator.js';
 import {
   auditQuerySchema,
@@ -137,6 +151,13 @@ router.patch(
   validate(rescheduleReservationSchema),
   rescheduleReservation,
 );
+router.patch(
+  '/reservations/:id/selection-status',
+  requirePermission(PERMISSIONS.RESERVATIONS_STATUS_UPDATE),
+  validateObjectId('id', 'reservation id'),
+  validate(adminReservationSelectionStatusSchema),
+  updateReservationSelectionStatus,
+);
 
 router.get(
   '/emails',
@@ -150,6 +171,13 @@ router.post(
   requirePermission(PERMISSIONS.EMAILS_RETRY),
   validateObjectId('id', 'email id'),
   retryEmail,
+);
+
+router.get(
+  '/catering',
+  requirePermission(PERMISSIONS.EMAILS_VIEW),
+  validate(adminCateringQuerySchema, 'query'),
+  cateringRequests,
 );
 
 router.get(
@@ -286,6 +314,26 @@ router.patch(
   validateObjectId('id', 'staff id'),
   validate(updateStaffSchema),
   updateStaff,
+);
+
+router.get(
+  '/invitations',
+  requirePermission(PERMISSIONS.STAFF_VIEW),
+  validate(adminInvitationQuerySchema, 'query'),
+  listInvitations,
+);
+router.post(
+  '/invitations',
+  requirePermission(PERMISSIONS.STAFF_CREATE),
+  validate(createAdminInvitationSchema),
+  createInvitation,
+);
+router.post(
+  '/invitations/:id/revoke',
+  requirePermission(PERMISSIONS.STAFF_UPDATE),
+  validateObjectId('id', 'invitation id'),
+  validate(revokeAdminInvitationSchema),
+  revokeInvitation,
 );
 
 router.get(

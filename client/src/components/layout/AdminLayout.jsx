@@ -12,7 +12,9 @@ import {
   Menu,
   ScrollText,
   Settings,
+  UserPlus,
   Users,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { can, PERMISSIONS } from '../../lib/permissions.js';
@@ -56,9 +58,21 @@ const NAV = [
     permission: PERMISSIONS.STAFF_VIEW,
   },
   {
+    to: '/admin/invitations',
+    label: 'Invitations',
+    icon: UserPlus,
+    permission: PERMISSIONS.STAFF_VIEW,
+  },
+  {
     to: '/admin/emails',
     label: 'Email outbox',
     icon: Mail,
+    permission: PERMISSIONS.EMAILS_VIEW,
+  },
+  {
+    to: '/admin/catering',
+    label: 'Catering',
+    icon: UtensilsCrossed,
     permission: PERMISSIONS.EMAILS_VIEW,
   },
   {
@@ -82,7 +96,9 @@ const TITLES = {
   '/admin/menu-review': 'Menu review',
   '/admin/customers': 'Customers',
   '/admin/staff': 'Staff',
+  '/admin/invitations': 'Administrator invitations',
   '/admin/emails': 'Email outbox',
+  '/admin/catering': 'Catering requests',
   '/admin/audit': 'Audit log',
   '/admin/settings': 'Settings',
 };

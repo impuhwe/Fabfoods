@@ -3,8 +3,6 @@ import { ShoppingBag, Trash2 } from 'lucide-react';
 import Drawer from '../ui/Drawer.jsx';
 import Button from '../ui/Button.jsx';
 import QuantityStepper from './QuantityStepper.jsx';
-import ResolvedImage from './MenuImage.jsx';
-import { categoryImage } from '../../lib/imagery.js';
 import { formatRwf } from '../../lib/format.js';
 import { useCart } from '../../contexts/CartContext.jsx';
 
@@ -32,13 +30,7 @@ export function CartDrawer() {
         <div className="flex min-h-full flex-col">
           <ul className="divide-y divide-cocoa-900/10">
             {items.map((line) => (
-              <li key={line.id} className="flex gap-3 py-4 first:pt-0">
-                <ResolvedImage
-                  src={line.image}
-                  fallback={categoryImage(line.categorySlug)}
-                  alt={line.imageAlt ?? ''}
-                  className="h-20 w-20 shrink-0 rounded-lg object-cover"
-                />
+              <li key={line.id} className="py-4 first:pt-0">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div>

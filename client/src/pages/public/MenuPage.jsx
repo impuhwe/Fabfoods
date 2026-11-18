@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import Button from '../../components/ui/Button.jsx';
@@ -158,6 +158,16 @@ export function MenuPage() {
   }
 
   const activeCategory = categories.find((entry) => entry.slug === category);
+  const groupedItems = useMemo(() => {
+    const groups = new Map();
+    for (const item of items) {
+      const key = item.category?.slug ?? 'other';
+      const name = item.category?.name ?? 'Kitchen';
+      if (!groups.has(key)) groups.set(key, { key, name, items: [] });
+      groups.get(key).items.push(item);
+    }
+    return [...groups.values()];
+  }, [items]);
 
   return (
     <>
@@ -270,9 +280,9 @@ export function MenuPage() {
         <h2 className="sr-only">Menu results</h2>
 
         {loading ? (
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {Array.from({ length: 6 }, (_, index) => (
-              <Skeleton key={index} className="h-[430px]" />
+              <Skeleton key={index} className="h-24" />
             ))}
           </div>
         ) : items.length === 0 ? (
@@ -288,9 +298,18 @@ export function MenuPage() {
             className="mt-6"
           />
         ) : (
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => (
-              <MenuItemCard key={item.id} item={item} />
+          <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:gap-x-12">
+            {groupedItems.map((group) => (
+              <section key={group.key} id={`menu-category-${group.key}`} className="min-w-0">
+                <h2 className="border-b border-cocoa-900/15 pb-2 font-display text-2xl font-semibold text-cocoa-950">
+                  {group.name}
+                </h2>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                  {group.items.map((item) => (
+                    <MenuItemCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}
@@ -308,8 +327,7 @@ export function MenuPage() {
           <p className="mt-1">
             Menu names and prices come from the restaurant&apos;s printed menus. Items marked
             “Awaiting confirmation” cannot be added to an online order until the owner confirms
-            them. No descriptions, ingredients or allergens have been invented. Menu images are
-            illustrative stock photography, not photographs of dishes prepared by FAB FOODS.
+            them. No descriptions, ingredients or allergens have been invented.
           </p>
           <Link to="/contact" className="mt-2 inline-block font-semibold text-ember-700 underline">
             Ask about a dish

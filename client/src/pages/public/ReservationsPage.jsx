@@ -10,15 +10,19 @@ import {
   Clock3,
   Coffee,
   Heart,
-  Sparkles,
+  ListChecks,
   Users,
 } from 'lucide-react';
+import ReservationMenuPicker from '../../components/public/ReservationMenuPicker.jsx';
+import ReservationSelectionSummary from '../../components/public/ReservationSelectionSummary.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Field from '../../components/ui/Field.jsx';
 import Input, { inputClasses } from '../../components/ui/Input.jsx';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { getApiErrorMessage } from '../../lib/api.js';
+import { formatRwf } from '../../lib/format.js';
+import { toReservationSelectionPayload } from '../../lib/reservationMenu.js';
 import { OCCASIONS } from '../../lib/site.js';
 import { HIGH_PRIORITY_IMAGE_PROPS, RESERVATION_IMAGE } from '../../lib/imagery.js';
 import { reservationFormSchema } from '../../lib/validation.js';
@@ -30,7 +34,6 @@ const latest = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).f
 );
 
 const OCCASION_ICONS = {
-  'No special occasion': Sparkles,
   Birthday: Cake,
   Anniversary: Heart,
   'Business meal': Briefcase,
@@ -42,12 +45,14 @@ export function ReservationsPage() {
   const { user } = useAuth();
   const [reservation, setReservation] = useState(null);
   const [submitError, setSubmitError] = useState('');
+  const [menuSelections, setMenuSelections] = useState([]);
   const {
     register,
     control,
     handleSubmit,
     reset,
     getValues,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(reservationFormSchema),
@@ -58,10 +63,12 @@ export function ReservationsPage() {
       date: today,
       time: '19:00',
       partySize: 2,
-      occasion: OCCASIONS[0],
+      occasion: '',
       specialRequests: '',
+      preparationNotes: '',
     },
   });
+  const currentValues = watch();
 
   const { field: occasionField } = useController({ control, name: 'occasion' });
 
@@ -83,10 +90,41 @@ export function ReservationsPage() {
     }
   }, [user, reset, getValues]);
 
-  async function onSubmit(values) {
+  function addMenuSelection(line) {
+    setMenuSelections((current) => {
+      const existing = current.find((entry) => entry.key === line.key);
+      if (!existing) return [...current, line];
+      return current.map((entry) =>
+        entry.key === line.key
+          ? {
+              ...entry,
+              quantity: Math.min(20, entry.quantity + line.quantity),
+              lineTotal: entry.unitPrice * Math.min(20, entry.quantity + line.quantity),
+            }
+          : entry,
+      );
+    });
+  }
+
+  function changeMenuQuantity(key, quantity) {
+    setMenuSelections((current) =>
+      current.map((line) =>
+        line.key === key ? { ...line, quantity, lineTotal: line.unitPrice * quantity } : line,
+      ),
+    );
+  }
+
+  function removeMenuSelection(key) {
+    setMenuSelections((current) => current.filter((line) => line.key !== key));
+  }
+
+  async function onSubmit(formValues) {
     setSubmitError('');
     try {
-      const data = await requestReservation(values);
+      const data = await requestReservation({
+        ...formValues,
+        menuSelections: menuSelections.map(toReservationSelectionPayload),
+      });
       setReservation(data.reservation);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
@@ -145,6 +183,45 @@ export function ReservationsPage() {
             </div>
           </dl>
 
+          <div className="mt-5 rounded-xl border border-cocoa-900/10 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cocoa-500">
+                Food & drink pre-selection
+              </p>
+              <span className="text-sm font-semibold text-cocoa-900">
+                {reservation.selectionStatusLabel}
+              </span>
+            </div>
+            {reservation.menuSelections?.length ? (
+              <ul className="mt-3 space-y-2 text-sm text-cocoa-700">
+                {reservation.menuSelections.map((line) => (
+                  <li key={`${line.slug}-${line.selectionSummary.join('-')}`}>
+                    <span className="font-semibold">{line.name}</span> × {line.quantity}
+                    {line.selectionSummary?.length ? (
+                      <span className="text-cocoa-500"> · {line.selectionSummary.join(', ')}</span>
+                    ) : null}
+                    <span className="float-right tabular-nums">{formatRwf(line.lineTotal)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-cocoa-600">No food or drinks were selected.</p>
+            )}
+            {reservation.selectionEstimate ? (
+              <p className="mt-3 border-t border-cocoa-900/10 pt-3 text-sm font-semibold text-cocoa-900">
+                Estimated total: {formatRwf(reservation.selectionEstimate.total)}
+              </p>
+            ) : null}
+            {reservation.preparationNotes ? (
+              <p className="mt-3 rounded-lg bg-cream-50 p-3 text-xs text-cocoa-600">
+                Preparation notes: {reservation.preparationNotes}
+              </p>
+            ) : null}
+            <p className="mt-3 text-xs text-cocoa-500">
+              This is not a food order. The restaurant reviews selections separately.
+            </p>
+          </div>
+
           <div className="mt-6 flex flex-wrap gap-3">
             <Button asChild>
               <Link to="/menu">Browse the menu</Link>
@@ -153,7 +230,8 @@ export function ReservationsPage() {
               variant="secondary"
               onClick={() => {
                 setReservation(null);
-                reset({ ...getValues(), specialRequests: '' });
+                setMenuSelections([]);
+                reset({ ...getValues(), specialRequests: '', preparationNotes: '' });
               }}
             >
               Make another request
@@ -192,7 +270,7 @@ export function ReservationsPage() {
       <section className="mx-auto grid max-w-[1240px] gap-10 px-5 py-12 sm:px-8 lg:grid-cols-[1fr_0.65fr] lg:px-12 lg:py-16">
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="rounded-2xl border border-cocoa-900/10 bg-white p-6 shadow-soft sm:p-8"
+          className="min-w-0 rounded-2xl border border-cocoa-900/10 bg-white p-6 shadow-soft sm:p-8"
           noValidate
         >
           <h2 className="font-display text-2xl font-semibold text-cocoa-950">Your request</h2>
@@ -229,14 +307,27 @@ export function ReservationsPage() {
               >
                 Occasion
               </legend>
-              <p className="mt-0.5 text-xs text-cocoa-500">Choose one, or leave it open.</p>
+              <div className="mt-0.5 flex flex-wrap items-center gap-3">
+                <p className="text-xs text-cocoa-500">
+                  Optional — leave unselected for a normal reservation.
+                </p>
+                {occasionField.value ? (
+                  <button
+                    type="button"
+                    onClick={() => occasionField.onChange('')}
+                    className="text-xs font-semibold text-ember-700 underline"
+                  >
+                    Clear occasion
+                  </button>
+                ) : null}
+              </div>
               <div
                 role="radiogroup"
                 aria-labelledby="reservation-occasion-legend"
                 className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3"
               >
                 {OCCASIONS.map((occasion) => {
-                  const Icon = OCCASION_ICONS[occasion] ?? Sparkles;
+                  const Icon = OCCASION_ICONS[occasion] ?? Coffee;
                   const checked = occasionField.value === occasion;
                   return (
                     <label key={occasion} className="cursor-pointer">
@@ -279,6 +370,81 @@ export function ReservationsPage() {
             >
               <textarea rows={4} className={inputClasses} {...register('specialRequests')} />
             </Field>
+            <Field
+              label="Preparation or dietary notes"
+              error={errors.preparationNotes?.message}
+              hint="Optional notes for selected food and drinks, such as allergies or spice level."
+              className="sm:col-span-2"
+            >
+              <textarea rows={3} className={inputClasses} {...register('preparationNotes')} />
+            </Field>
+          </div>
+
+          <div className="mt-8">
+            <ReservationMenuPicker selections={menuSelections} onAdd={addMenuSelection} />
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-cocoa-900/10 bg-cream-50 p-5">
+            <div className="flex items-center gap-2">
+              <ListChecks className="h-4 w-4 text-ember-700" aria-hidden="true" />
+              <h2 className="font-display text-xl font-semibold text-cocoa-950">
+                Review before sending
+              </h2>
+            </div>
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-cocoa-500">
+                  Guest
+                </dt>
+                <dd className="mt-0.5 text-cocoa-900">{currentValues.name || '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-cocoa-500">
+                  Contact
+                </dt>
+                <dd className="mt-0.5 text-cocoa-900">
+                  {currentValues.email || '—'} · {currentValues.phone || '—'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-cocoa-500">
+                  Requested table
+                </dt>
+                <dd className="mt-0.5 text-cocoa-900">
+                  {currentValues.date || '—'} at {currentValues.time || '—'} ·{' '}
+                  {currentValues.partySize || '—'} guests
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-cocoa-500">
+                  Occasion
+                </dt>
+                <dd className="mt-0.5 text-cocoa-900">{currentValues.occasion || '—'}</dd>
+              </div>
+            </dl>
+            {currentValues.specialRequests ? (
+              <p className="mt-4 rounded-lg bg-white p-3 text-xs text-cocoa-600">
+                Special requests: {currentValues.specialRequests}
+              </p>
+            ) : null}
+            {currentValues.preparationNotes ? (
+              <p className="mt-2 rounded-lg bg-white p-3 text-xs text-cocoa-600">
+                Preparation notes: {currentValues.preparationNotes}
+              </p>
+            ) : null}
+            <div className="mt-4">
+              <ReservationSelectionSummary
+                selections={menuSelections}
+                onQuantityChange={changeMenuQuantity}
+                onRemove={removeMenuSelection}
+                compact
+              />
+              {!menuSelections.length ? (
+                <p className="rounded-lg bg-white p-3 text-sm text-cocoa-600">
+                  No food or drinks selected — you can still send this request.
+                </p>
+              ) : null}
+            </div>
           </div>
 
           {submitError ? (
@@ -299,7 +465,7 @@ export function ReservationsPage() {
           </div>
         </form>
 
-        <aside className="space-y-5">
+        <aside className="min-w-0 space-y-5">
           <div className="rounded-2xl border border-cocoa-900/10 bg-cream-50 p-5">
             <h2 className="font-display text-xl font-semibold text-cocoa-950">Good to know</h2>
             <ul className="mt-4 space-y-4 text-sm text-cocoa-600">

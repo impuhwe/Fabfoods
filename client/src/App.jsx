@@ -10,6 +10,7 @@ import MenuItemPage from './pages/public/MenuItemPage.jsx';
 import AboutPage from './pages/public/AboutPage.jsx';
 import GalleryPage from './pages/public/GalleryPage.jsx';
 import ReservationsPage from './pages/public/ReservationsPage.jsx';
+import CateringPage from './pages/public/CateringPage.jsx';
 import ContactPage from './pages/public/ContactPage.jsx';
 import LoginPage from './pages/public/LoginPage.jsx';
 import RegisterPage from './pages/public/RegisterPage.jsx';
@@ -20,13 +21,16 @@ import CartPage from './pages/public/CartPage.jsx';
 import CheckoutPage from './pages/public/CheckoutPage.jsx';
 import OrderPage from './pages/public/OrderPage.jsx';
 import AdminLogin from './pages/admin/AdminLogin.jsx';
+import AcceptInvitation from './pages/admin/AcceptInvitation.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 import AdminOrders from './pages/admin/AdminOrders.jsx';
 import AdminReservations from './pages/admin/AdminReservations.jsx';
+import AdminCatering from './pages/admin/AdminCatering.jsx';
 import AdminMenuReview from './pages/admin/AdminMenuReview.jsx';
 import AdminSettings from './pages/admin/AdminSettings.jsx';
 import AdminCustomers from './pages/admin/AdminCustomers.jsx';
 import AdminStaff from './pages/admin/AdminStaff.jsx';
+import AdminInvitations from './pages/admin/AdminInvitations.jsx';
 import AdminEmails from './pages/admin/AdminEmails.jsx';
 import AdminAuditLog from './pages/admin/AdminAuditLog.jsx';
 import Forbidden from './pages/Forbidden.jsx';
@@ -43,6 +47,7 @@ export function App() {
         <Route path="about" element={<AboutPage />} />
         <Route path="gallery" element={<GalleryPage />} />
         <Route path="reservations" element={<ReservationsPage />} />
+        <Route path="catering" element={<CateringPage />} />
         <Route path="contact" element={<ContactPage />} />
         <Route path="cart" element={<CartPage />} />
         <Route path="checkout" element={<CheckoutPage />} />
@@ -86,6 +91,7 @@ export function App() {
       </Route>
 
       <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/accept-invitation" element={<AcceptInvitation />} />
 
       <Route
         path="/admin"
@@ -145,10 +151,26 @@ export function App() {
           }
         />
         <Route
+          path="invitations"
+          element={
+            <RequirePermission permissions={[PERMISSIONS.STAFF_VIEW]}>
+              <AdminInvitations />
+            </RequirePermission>
+          }
+        />
+        <Route
           path="emails"
           element={
             <RequirePermission permissions={[PERMISSIONS.EMAILS_VIEW]}>
               <AdminEmails />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="catering"
+          element={
+            <RequirePermission permissions={[PERMISSIONS.EMAILS_VIEW]}>
+              <AdminCatering />
             </RequirePermission>
           }
         />

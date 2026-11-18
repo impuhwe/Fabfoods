@@ -6,6 +6,7 @@ describe('menu item selections', () => {
     const item = {
       isOrderable: true,
       hasSizeOptions: true,
+      sizeOptions: [{ label: 'Regular', price: 500 }],
       servingOptions: [],
       addonGroups: [],
     };
@@ -16,14 +17,18 @@ describe('menu item selections', () => {
     expect(validateMenuItemSelection(item, { sizeLabel: 'Regular', serving: {}, addons: {} })).toBe(
       '',
     );
+    expect(validateMenuItemSelection(item, { sizeLabel: 'Large', serving: {}, addons: {} })).toBe(
+      'Choose an available size for this item.',
+    );
   });
 
   it('requires every required serving and add-on group', () => {
     const item = {
       isOrderable: true,
       hasSizeOptions: false,
-      servingOptions: [{ name: 'Temperature', isRequired: true }],
-      addonGroups: [{ name: 'Extras', isRequired: true }],
+      sizeOptions: [],
+      servingOptions: [{ name: 'Temperature', isRequired: true, options: [{ name: 'Hot' }] }],
+      addonGroups: [{ name: 'Extras', isRequired: true, options: [{ name: 'Sauce' }] }],
     };
 
     expect(
@@ -38,6 +43,20 @@ describe('menu item selections', () => {
         addons: { Extras: ['Sauce'] },
       }),
     ).toBe('');
+  });
+
+  it('rejects unavailable option names', () => {
+    expect(
+      validateMenuItemSelection(
+        {
+          isOrderable: true,
+          hasSizeOptions: false,
+          servingOptions: [{ name: 'Temperature', isRequired: true, options: [{ name: 'Hot' }] }],
+          addonGroups: [],
+        },
+        { serving: { Temperature: ['Cold'] }, addons: {} },
+      ),
+    ).toBe('Choose an available option for Temperature.');
   });
 
   it('does not allow an unorderable item', () => {

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  cateringFormSchema,
   checkoutFormSchema,
   contactFormSchema,
+  invitationAcceptFormSchema,
   loginFormSchema,
   passwordFormSchema,
   profileFormSchema,
@@ -29,6 +31,12 @@ const reservation = {
 describe('reservationFormSchema', () => {
   it('accepts a valid future request', () => {
     expect(reservationFormSchema.safeParse(reservation).success).toBe(true);
+  });
+
+  it('accepts a reservation with no occasion', () => {
+    const result = reservationFormSchema.safeParse({ ...reservation, occasion: '' });
+    expect(result.success).toBe(true);
+    expect(result.data.occasion).toBe('');
   });
 
   it('rejects past dates, bad times and oversized parties', () => {
@@ -73,6 +81,43 @@ describe('auth and contact schemas', () => {
   });
 });
 
+describe('cateringFormSchema', () => {
+  const catering = {
+    name: 'Aline Test',
+    email: 'aline@example.com',
+    phone: '+250788000000',
+    eventType: 'corporate',
+    eventDate: kigaliDate(7),
+    guestCount: 40,
+    location: 'Kigali',
+    message: 'We need lunch for a team workshop.',
+  };
+
+  it('accepts guest catering enquiries with or without a date', () => {
+    expect(cateringFormSchema.safeParse(catering).success).toBe(true);
+    expect(cateringFormSchema.safeParse({ ...catering, eventDate: '' }).success).toBe(true);
+  });
+
+  it('rejects invalid event types and unsupported guest counts', () => {
+    expect(cateringFormSchema.safeParse({ ...catering, eventType: 'unknown' }).success).toBe(false);
+    expect(cateringFormSchema.safeParse({ ...catering, guestCount: 1001 }).success).toBe(false);
+  });
+});
+
+describe('invitationAcceptFormSchema', () => {
+  it('requires a strong, confirmed password', () => {
+    const values = { password: 'NewAdminPass123', confirmPassword: 'NewAdminPass123' };
+    expect(invitationAcceptFormSchema.safeParse(values).success).toBe(true);
+    expect(
+      invitationAcceptFormSchema.safeParse({ ...values, confirmPassword: 'DifferentPass123' })
+        .success,
+    ).toBe(false);
+    expect(
+      invitationAcceptFormSchema.safeParse({ password: 'weak', confirmPassword: 'weak' }).success,
+    ).toBe(false);
+  });
+});
+
 describe('checkoutFormSchema', () => {
   it('accepts pickup and delivery details with a known fulfilment type', () => {
     const base = {
@@ -88,8 +133,7 @@ describe('checkoutFormSchema', () => {
       checkoutFormSchema.safeParse({
         ...base,
         fulfillmentType: 'delivery',
-        deliveryLine1: 'KG 11 Ave',
-        deliveryDistrict: 'Gasabo',
+        deliveryLine1: 'KG 11 Ave, Gasabo',
       }).success,
     ).toBe(true);
     expect(

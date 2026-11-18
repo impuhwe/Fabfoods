@@ -45,6 +45,11 @@ export async function rescheduleAdminReservation(id, payload) {
   return data.data.reservation;
 }
 
+export async function updateAdminReservationSelectionStatus(id, payload) {
+  const { data } = await api.patch(`/admin/reservations/${id}/selection-status`, payload);
+  return data.data.reservation;
+}
+
 export async function getAdminSettings() {
   const { data } = await api.get('/admin/settings');
   return data.data;
@@ -58,6 +63,11 @@ export async function updateAdminSettings(payload) {
 export async function getAdminEmails(params = {}) {
   const { data } = await api.get('/admin/emails', { params });
   return { emails: data.data.emails, meta: data.meta };
+}
+
+export async function getAdminCateringRequests(params = {}) {
+  const { data } = await api.get('/admin/catering', { params });
+  return { requests: data.data, meta: data.meta };
 }
 
 export async function processAdminEmails() {
@@ -153,6 +163,21 @@ export async function createAdminStaff(payload) {
 export async function updateAdminStaff(id, payload) {
   const { data } = await api.patch(`/admin/staff/${id}`, payload);
   return data.data.user;
+}
+
+export async function getAdminInvitations(params = {}) {
+  const { data } = await api.get('/admin/invitations', { params });
+  return { invitations: data.data, meta: data.meta };
+}
+
+export async function createAdminInvitation(payload) {
+  const { data } = await api.post('/admin/invitations', payload);
+  return data.data;
+}
+
+export async function revokeAdminInvitation(id, payload = {}) {
+  const { data } = await api.post(`/admin/invitations/${id}/revoke`, payload);
+  return data.data.invitation;
 }
 
 export async function getAdminAuditLogs(params = {}) {

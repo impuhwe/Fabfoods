@@ -1,8 +1,5 @@
 ﻿import { FULFILLMENT_TYPES } from '../config/constants.js';
-import MenuItem from '../models/MenuItem.js';
-import { MenuPricingError, resolveMenuItemPrice } from './menuPricing.service.js';
-import { isOrderable } from './publicMenu.service.js';
-import { badRequest, conflict, notFound } from '../utils/errors.js';
+import { resolveMenuSelectionLines } from './menuSelectionQuote.service.js';
 import {
   effectiveEnabledPaymentMethods,
   getSettings,
@@ -10,88 +7,14 @@ import {
   resolveDeliveryQuote,
 } from './settings.service.js';
 
-function selectionSummary(resolved) {
-  const parts = [];
-  if (resolved.sizeLabel) parts.push(resolved.sizeLabel);
-  for (const selection of resolved.selections.serving) {
-    parts.push(selection.optionName);
-  }
-  for (const selection of resolved.selections.addons) {
-    parts.push(selection.optionName);
-  }
-  return parts;
-}
-
 export async function quoteOrder(
   { items, fulfillmentType = FULFILLMENT_TYPES.PICKUP, deliveryAddress },
   settings = null,
 ) {
   const config = settings ?? (await getSettings());
-  const slugs = [...new Set(items.map((line) => line.slug))];
-  const menuItems = await MenuItem.find({ slug: { $in: slugs }, isArchived: false });
-  const bySlug = new Map(menuItems.map((item) => [item.slug, item]));
-
-  const lines = [];
-  let subtotal = 0;
-  let itemCount = 0;
-
-  for (const line of items) {
-    const item = bySlug.get(line.slug);
-    if (!item) throw notFound(`Menu item not found: ${line.slug}`);
-    if (!item.verified || item.needsReview) {
-      throw conflict(
-        `${item.name} has not been verified by staff and cannot be ordered online yet`,
-        'ITEM_NOT_VERIFIED',
-      );
-    }
-    if (item.hasUnresolvedBlockingIssues) {
-      throw conflict(
-        `${item.name} has an unresolved review issue and cannot be ordered online yet`,
-        'ITEM_REVIEW_REQUIRED',
-      );
-    }
-    if (!item.isAvailable) {
-      throw conflict(`${item.name} is currently unavailable`, 'ITEM_UNAVAILABLE');
-    }
-    if (!isOrderable(item)) {
-      throw conflict(
-        `${item.name} is awaiting owner confirmation and cannot be ordered online yet`,
-        'ITEM_NOT_ORDERABLE',
-      );
-    }
-
-    let resolved;
-    try {
-      resolved = resolveMenuItemPrice(item, {
-        sizeLabel: line.sizeLabel,
-        servingSelections: line.servingSelections,
-        addonSelections: line.addonSelections,
-      });
-    } catch (error) {
-      if (error instanceof MenuPricingError) {
-        throw badRequest(error.message, [{ field: line.slug, message: error.message }]);
-      }
-      throw error;
-    }
-
-    const lineTotal = resolved.unitPrice * line.quantity;
-    subtotal += lineTotal;
-    itemCount += line.quantity;
-
-    lines.push({
-      slug: item.slug,
-      name: item.name,
-      quantity: line.quantity,
-      unitPrice: resolved.unitPrice,
-      lineTotal,
-      basePrice: resolved.basePrice,
-      servingPriceDelta: resolved.servingPriceDelta,
-      addonPrice: resolved.addonPrice,
-      selectionSummary: selectionSummary(resolved),
-      selections: resolved.selections,
-    });
-  }
-
+  const lines = await resolveMenuSelectionLines(items);
+  const subtotal = lines.reduce((total, line) => total + line.lineTotal, 0);
+  const itemCount = lines.reduce((total, line) => total + line.quantity, 0);
   const pickup = fulfillmentType === FULFILLMENT_TYPES.PICKUP;
   let fulfillment;
 

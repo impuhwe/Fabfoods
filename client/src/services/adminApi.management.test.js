@@ -14,6 +14,7 @@ import {
   setAdminCustomerStatus,
   setAdminMenuItemAvailability,
   updateAdminMenuCategory,
+  updateAdminReservationSelectionStatus,
   updateAdminStaff,
 } from './adminApi.js';
 
@@ -126,5 +127,19 @@ describe('admin management API', () => {
 
     await expect(getAdminReservation('r1')).resolves.toEqual({ id: 'r1', reference: 'RS-1' });
     expect(api.get).toHaveBeenCalledWith('/admin/reservations/r1');
+  });
+
+  it('reviews reservation food and drink selections', async () => {
+    vi.spyOn(api, 'patch').mockResolvedValueOnce({
+      data: { data: { reservation: { id: 'r1', selectionStatus: 'confirmed' } } },
+    });
+
+    await expect(
+      updateAdminReservationSelectionStatus('r1', { status: 'confirmed', note: 'Checked' }),
+    ).resolves.toEqual({ id: 'r1', selectionStatus: 'confirmed' });
+    expect(api.patch).toHaveBeenCalledWith('/admin/reservations/r1/selection-status', {
+      status: 'confirmed',
+      note: 'Checked',
+    });
   });
 });

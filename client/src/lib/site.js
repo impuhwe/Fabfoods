@@ -11,14 +11,8 @@ export const NAV_LINKS = [
   { to: '/about', label: 'About' },
   { to: '/gallery', label: 'Gallery' },
   { to: '/reservations', label: 'Reservations' },
+  { to: '/catering', label: 'Catering' },
   { to: '/contact', label: 'Contact' },
 ];
 
-export const OCCASIONS = [
-  'No special occasion',
-  'Birthday',
-  'Anniversary',
-  'Business meal',
-  'Family gathering',
-  'Other',
-];
+export const OCCASIONS = ['Birthday', 'Anniversary', 'Business meal', 'Family gathering', 'Other'];

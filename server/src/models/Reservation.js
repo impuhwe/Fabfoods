@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
-import { RESERVATION_STATUSES, RESERVATION_STATUS_VALUES } from '../config/constants.js';
+import {
+  RESERVATION_SELECTION_STATUSES,
+  RESERVATION_SELECTION_STATUS_VALUES,
+  RESERVATION_STATUSES,
+  RESERVATION_STATUS_VALUES,
+} from '../config/constants.js';
 
 const statusEventSchema = new mongoose.Schema(
   {
@@ -23,6 +28,69 @@ const statusEventSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+  },
+  { _id: false },
+);
+
+const selectionOptionSchema = new mongoose.Schema(
+  {
+    groupName: { type: String, required: true, trim: true, maxlength: 80 },
+    optionName: { type: String, required: true, trim: true, maxlength: 90 },
+    priceDelta: { type: Number, required: true, min: 0 },
+  },
+  { _id: false },
+);
+
+const addonOptionSchema = new mongoose.Schema(
+  {
+    groupName: { type: String, required: true, trim: true, maxlength: 80 },
+    optionName: { type: String, required: true, trim: true, maxlength: 90 },
+    price: { type: Number, required: true, min: 0 },
+  },
+  { _id: false },
+);
+
+const reservationSelectionLineSchema = new mongoose.Schema(
+  {
+    slug: { type: String, required: true, trim: true, maxlength: 120 },
+    name: { type: String, required: true, trim: true, maxlength: 160 },
+    quantity: { type: Number, required: true, min: 1, max: 20 },
+    unitPrice: { type: Number, required: true, min: 0 },
+    lineTotal: { type: Number, required: true, min: 0 },
+    basePrice: { type: Number, required: true, min: 0 },
+    servingPriceDelta: { type: Number, required: true, min: 0, default: 0 },
+    addonPrice: { type: Number, required: true, min: 0, default: 0 },
+    selectionSummary: { type: [String], default: [] },
+    selections: {
+      sizeLabel: { type: String, default: null },
+      serving: { type: [selectionOptionSchema], default: [] },
+      addons: { type: [addonOptionSchema], default: [] },
+    },
+  },
+  { _id: false },
+);
+
+const selectionEstimateSchema = new mongoose.Schema(
+  {
+    currency: { type: String, required: true, trim: true, maxlength: 12 },
+    itemCount: { type: Number, required: true, min: 0 },
+    subtotal: { type: Number, required: true, min: 0 },
+    total: { type: Number, required: true, min: 0 },
+    calculatedAt: { type: Date, required: true, default: Date.now },
+  },
+  { _id: false },
+);
+
+const selectionStatusEventSchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      enum: RESERVATION_SELECTION_STATUS_VALUES,
+      required: true,
+    },
+    note: { type: String, trim: true, maxlength: 300, default: '' },
+    changedAt: { type: Date, default: Date.now },
+    changedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { _id: false },
 );
@@ -99,6 +167,46 @@ const reservationSchema = new mongoose.Schema(
       trim: true,
       maxlength: 600,
       default: '',
+    },
+    preparationNotes: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: '',
+    },
+    menuSelections: {
+      type: [reservationSelectionLineSchema],
+      default: [],
+    },
+    selectionEstimate: {
+      type: selectionEstimateSchema,
+      default: null,
+    },
+    selectionStatus: {
+      type: String,
+      enum: RESERVATION_SELECTION_STATUS_VALUES,
+      default: RESERVATION_SELECTION_STATUSES.NOT_REQUESTED,
+      required: true,
+      index: true,
+    },
+    selectionStatusHistory: {
+      type: [selectionStatusEventSchema],
+      default: [],
+    },
+    selectionReviewNote: {
+      type: String,
+      trim: true,
+      maxlength: 300,
+      default: '',
+    },
+    selectionReviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    selectionReviewedAt: {
+      type: Date,
+      default: null,
     },
     status: {
       type: String,

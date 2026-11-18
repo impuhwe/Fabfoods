@@ -180,6 +180,35 @@ describe('server-authoritative order quote', () => {
     expect(quote.fulfillment).toMatchObject({ type: 'delivery', available: false, fee: null });
   });
 
+  it('uses a single delivery address line and rejects removed address fields', async () => {
+    const items = [{ slug: 'french-fries', quantity: 1 }];
+
+    await postWithCsrf(
+      '/orders/quote',
+      {
+        items,
+        fulfillmentType: 'delivery',
+        deliveryAddress: { line1: 'KG 11 Ave, Gasabo', notes: 'Near the main road' },
+      },
+      csrfTokens,
+    ).expect(200);
+
+    await postWithCsrf(
+      '/orders/quote',
+      {
+        items,
+        fulfillmentType: 'delivery',
+        deliveryAddress: {
+          line1: 'KG 11 Ave',
+          city: 'Kigali',
+          district: 'Gasabo',
+          sector: 'Nyarugenge',
+        },
+      },
+      csrfTokens,
+    ).expect(400);
+  });
+
   it('rejects items awaiting staff verification or review resolution', async () => {
     const blockedByTags = await postWithCsrf(
       '/orders/quote',

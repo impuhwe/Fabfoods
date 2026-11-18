@@ -68,6 +68,17 @@ export const RESERVATION_STATUSES = Object.freeze({
 
 export const RESERVATION_STATUS_VALUES = Object.freeze(Object.values(RESERVATION_STATUSES));
 
+export const RESERVATION_SELECTION_STATUSES = Object.freeze({
+  NOT_REQUESTED: 'not_requested',
+  PENDING_REVIEW: 'pending_review',
+  CONFIRMED: 'confirmed',
+  DECLINED: 'declined',
+});
+
+export const RESERVATION_SELECTION_STATUS_VALUES = Object.freeze(
+  Object.values(RESERVATION_SELECTION_STATUSES),
+);
+
 export const EMAIL_STATUSES = Object.freeze({
   QUEUED: 'queued',
   SENDING: 'sending',
@@ -140,6 +151,17 @@ export const MENU_ORDER_BLOCKING_REVIEW_TAGS = Object.freeze([
   'size-variation',
   'spelling',
 ]);
+
+export const ADMIN_INVITATION_STATUS = Object.freeze({
+  PENDING: 'pending',
+  ACCEPTED: 'accepted',
+  EXPIRED: 'expired',
+  REVOKED: 'revoked',
+});
+
+export const ADMIN_INVITATION_STATUS_VALUES = Object.freeze(Object.values(ADMIN_INVITATION_STATUS));
+
+export const ADMIN_INVITATION_TTL_HOURS = 72;
 
 export const COOKIE_NAMES = Object.freeze({
   ACCESS: 'ff_access',

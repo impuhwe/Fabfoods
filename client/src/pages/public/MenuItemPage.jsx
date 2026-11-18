@@ -7,13 +7,11 @@ import Skeleton from '../../components/ui/Skeleton.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import QuantityStepper from '../../components/public/QuantityStepper.jsx';
 import MenuItemCard from '../../components/public/MenuItemCard.jsx';
-import MenuImage from '../../components/public/MenuImage.jsx';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { useCart } from '../../contexts/CartContext.jsx';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { formatRwf } from '../../lib/format.js';
 import { getApiErrorMessage } from '../../lib/api.js';
-import { menuItemImage } from '../../lib/imagery.js';
 import { validateMenuItemSelection } from '../../lib/menuSelection.js';
 import { getMenuItem, getMenuItems } from '../../services/publicApi.js';
 
@@ -59,7 +57,6 @@ export function MenuItemPage() {
   usePageMeta({
     title: item?.name ?? 'Menu item',
     description: item?.description || 'A dish from the FAB FOODS menu in Kigali.',
-    image: item ? menuItemImage(item) : undefined,
     type: 'article',
   });
 
@@ -181,34 +178,24 @@ export function MenuItemPage() {
       ...addonSelections.map((selection) => selection.optionName),
     ].filter(Boolean);
 
-    addItem(
-      {
-        ...item,
-        image: menuItemImage(item),
-        imageAlt: item.image?.alt || `Illustrative image for ${item.name}`,
-      },
-      {
-        quantity,
-        sizeLabel: sizeLabel || undefined,
-        servingSelections,
-        addonSelections,
-        unitPrice: price,
-        selectionSummary,
-      },
-    );
+    addItem(item, {
+      quantity,
+      sizeLabel: sizeLabel || undefined,
+      servingSelections,
+      addonSelections,
+      unitPrice: price,
+      selectionSummary,
+    });
     addToast({ title: `${item.name} added`, variant: 'success' });
   }
 
   if (loading) {
     return (
-      <div className="mx-auto grid max-w-[1240px] gap-10 px-5 py-12 sm:px-8 lg:grid-cols-2 lg:px-12">
-        <Skeleton className="aspect-square" />
-        <div className="space-y-4">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-12 w-3/4" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-12 w-40" />
-        </div>
+      <div className="mx-auto max-w-4xl space-y-4 px-5 py-12 sm:px-8">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-12 w-3/4" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-12 w-40" />
       </div>
     );
   }
@@ -240,20 +227,15 @@ export function MenuItemPage() {
           Back to menu
         </Link>
 
-        <div className="mt-6 grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-          <div>
-            <div className="overflow-hidden rounded-2xl bg-cream-200">
-              <MenuImage item={item} priority className="aspect-square w-full object-cover" />
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Badge variant={item.isOrderable ? 'success' : 'neutral'} dot>
-                {item.isOrderable ? 'Available' : 'Awaiting owner confirmation'}
-              </Badge>
-              <span className="text-xs text-cocoa-500">{item.category?.name}</span>
-            </div>
+        <div className="mx-auto mt-8 max-w-4xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={item.isOrderable ? 'success' : 'neutral'} dot>
+              {item.isOrderable ? 'Available' : 'Awaiting owner confirmation'}
+            </Badge>
+            <span className="text-xs text-cocoa-500">{item.category?.name}</span>
           </div>
 
-          <div>
+          <div className="mt-6">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-ember-700">
               {item.category?.name}
             </p>
@@ -449,7 +431,7 @@ export function MenuItemPage() {
                 See all
               </Link>
             </div>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
               {related.map((entry) => (
                 <MenuItemCard key={entry.id} item={entry} />
               ))}

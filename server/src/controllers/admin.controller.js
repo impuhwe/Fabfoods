@@ -134,6 +134,22 @@ export const updateReservationStatus = asyncHandler(async (req, res) => {
   sendSuccess(res, { reservation });
 });
 
+export const updateReservationSelectionStatus = asyncHandler(async (req, res) => {
+  const reservation = await reservationService.updateReservationSelectionStatus(
+    req.params.id,
+    req.body.status,
+    req.body.note,
+    req.user.id,
+  );
+  await recordAudit(req, {
+    action: 'reservation.selection.status.update',
+    targetType: 'reservation',
+    targetId: req.params.id,
+    summary: `Reservation food selection marked ${req.body.status}`,
+  });
+  sendSuccess(res, { reservation });
+});
+
 export const emails = asyncHandler(async (req, res) => {
   const { status, page = 1, limit = 50 } = req.query;
   const filter = status ? { status } : {};

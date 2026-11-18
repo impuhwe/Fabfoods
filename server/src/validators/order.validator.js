@@ -6,12 +6,7 @@ import {
 } from '../config/constants.js';
 import { deliveryAddressSchema, quoteLineSchema } from './public.validator.js';
 
-const emailSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .email('Enter a valid email address')
-  .max(254);
+const emailSchema = z.string().trim().toLowerCase().email('Enter a valid email address').max(254);
 
 const customerSchema = z
   .object({
@@ -38,13 +33,6 @@ export const createOrderSchema = z
         code: 'custom',
         path: ['deliveryAddress', 'line1'],
         message: 'Enter the delivery address',
-      });
-    }
-    if (!value.deliveryAddress?.city && !value.deliveryAddress?.district) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['deliveryAddress', 'district'],
-        message: 'Enter the city or district',
       });
     }
   });

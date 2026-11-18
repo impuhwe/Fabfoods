@@ -46,6 +46,19 @@ function orderSummary(order) {
 }
 
 const builders = {
+  admin_invitation: (payload) => ({
+    subject: 'You are invited to administer Fabs Restaurant',
+    html: layout(
+      'Administrator invitation',
+      `<p>Hello ${escapeHtml(payload.name)},</p>
+       <p>${escapeHtml(payload.inviterName || 'An administrator')} invited you to join Fabs Restaurant as an administrator.</p>
+       <p><a href="${escapeHtml(payload.inviteUrl)}">Accept your invitation and set a password</a></p>
+       <p>This link expires on ${escapeHtml(payload.expiresAt)} and can be used once.</p>
+       <p>If you did not expect this invitation, you can ignore this message.</p>`,
+    ),
+    text: `Hello ${payload.name}, you were invited to administer Fabs Restaurant. Accept at ${payload.inviteUrl}. This link expires on ${payload.expiresAt} and can be used once.`,
+  }),
+
   account_registered: (payload) => ({
     subject: 'Your Fabs Restaurant account',
     html: layout(

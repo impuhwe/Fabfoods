@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarDays, RefreshCw } from 'lucide-react';
+import { CalendarDays, RefreshCw, ShoppingBag } from 'lucide-react';
 import Badge from '../../components/ui/Badge.jsx';
 import Button from '../../components/ui/Button.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
@@ -10,11 +10,13 @@ import Skeleton from '../../components/ui/Skeleton.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { getApiErrorMessage } from '../../lib/api.js';
+import { formatRwf } from '../../lib/format.js';
 import { can, PERMISSIONS } from '../../lib/permissions.js';
 import {
   getAdminReservation,
   getAdminReservations,
   rescheduleAdminReservation,
+  updateAdminReservationSelectionStatus,
   updateAdminReservationStatus,
 } from '../../services/adminApi.js';
 
@@ -25,6 +27,13 @@ const STATUS_VARIANT = {
   cancelled: 'neutral',
   completed: 'info',
   no_show: 'danger',
+};
+
+const SELECTION_STATUS_VARIANT = {
+  not_requested: 'neutral',
+  pending_review: 'warning',
+  confirmed: 'success',
+  declined: 'danger',
 };
 
 const NEXT_ACTIONS = {
@@ -55,11 +64,13 @@ export function AdminReservations() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
   const [note, setNote] = useState('');
+  const [selectionNote, setSelectionNote] = useState('');
   const [reschedule, setReschedule] = useState({ date: '', time: '', partySize: '' });
   const [busy, setBusy] = useState(false);
 
   const canChangeStatus = can(user, PERMISSIONS.RESERVATIONS_STATUS_UPDATE);
   const canReschedule = can(user, PERMISSIONS.RESERVATIONS_RESCHEDULE);
+  const canReviewSelection = can(user, PERMISSIONS.RESERVATIONS_STATUS_UPDATE);
 
   async function load(nextStatus = status) {
     setLoading(true);
@@ -85,6 +96,7 @@ export function AdminReservations() {
       const reservation = await getAdminReservation(id);
       setSelected(reservation);
       setNote('');
+      setSelectionNote('');
       setReschedule({
         date: reservation.date ?? '',
         time: reservation.time ?? '',
@@ -117,6 +129,31 @@ export function AdminReservations() {
       });
     } catch (updateError) {
       setError(getApiErrorMessage(updateError, 'The reservation could not be updated.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reviewSelection(status) {
+    if (!selected) return;
+    setBusy(true);
+    setError('');
+    try {
+      const updated = await updateAdminReservationSelectionStatus(selected.id, {
+        status,
+        note: selectionNote,
+      });
+      setSelected(updated);
+      setReservations((current) =>
+        current.map((entry) => (entry.id === updated.id ? updated : entry)),
+      );
+      setSelectionNote('');
+      addToast({
+        title: `Food selection ${status.replaceAll('_', ' ')}`,
+        variant: 'success',
+      });
+    } catch (reviewError) {
+      setError(getApiErrorMessage(reviewError, 'The food selection could not be updated.'));
     } finally {
       setBusy(false);
     }
@@ -269,9 +306,114 @@ export function AdminReservations() {
 
               {selected.specialRequests ? (
                 <p className="mt-3 rounded-lg bg-cream-50 p-3 text-xs text-cocoa-600">
-                  Request: {selected.specialRequests}
+                  Special request: {selected.specialRequests}
                 </p>
               ) : null}
+
+              <div className="mt-4 rounded-xl border border-cocoa-900/10 bg-cream-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-cocoa-500">
+                    <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+                    Food & drink pre-selection
+                  </p>
+                  <Badge
+                    variant={SELECTION_STATUS_VARIANT[selected.selectionStatus] ?? 'neutral'}
+                    dot
+                  >
+                    {selected.selectionStatusLabel}
+                  </Badge>
+                </div>
+
+                {selected.menuSelections?.length ? (
+                  <ul className="mt-3 divide-y divide-cocoa-900/10">
+                    {selected.menuSelections.map((line, index) => (
+                      <li
+                        key={`${line.slug}-${index}`}
+                        className="flex flex-wrap items-start justify-between gap-2 py-2 first:pt-0"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-cocoa-950">
+                            {line.quantity} × {line.name}
+                          </p>
+                          {line.selectionSummary?.length ? (
+                            <p className="mt-0.5 text-xs text-cocoa-600">
+                              {line.selectionSummary.join(' · ')}
+                            </p>
+                          ) : null}
+                          <p className="mt-0.5 text-xs text-cocoa-500">
+                            {formatRwf(line.unitPrice)} each
+                          </p>
+                        </div>
+                        <span className="font-semibold tabular-nums text-cocoa-900">
+                          {formatRwf(line.lineTotal)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-cocoa-600">No food or drinks were selected.</p>
+                )}
+
+                {selected.selectionEstimate ? (
+                  <div className="mt-3 flex items-center justify-between border-t border-cocoa-900/10 pt-3 text-sm">
+                    <span className="font-semibold text-cocoa-800">Estimated total</span>
+                    <span className="font-display text-lg font-semibold text-cocoa-950">
+                      {formatRwf(selected.selectionEstimate.total)}
+                    </span>
+                  </div>
+                ) : null}
+
+                {selected.preparationNotes ? (
+                  <p className="mt-3 rounded-lg bg-white p-3 text-xs text-cocoa-600">
+                    Preparation notes: {selected.preparationNotes}
+                  </p>
+                ) : null}
+
+                {canReviewSelection &&
+                selected.menuSelections?.length &&
+                selected.selectionStatus === 'pending_review' ? (
+                  <div className="mt-4 border-t border-cocoa-900/10 pt-3">
+                    <Field label="Selection review note" hint="Saved with the selection decision.">
+                      <Input
+                        value={selectionNote}
+                        onChange={(event) => setSelectionNote(event.target.value)}
+                      />
+                    </Field>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button size="sm" onClick={() => reviewSelection('confirmed')} loading={busy}>
+                        Confirm selection
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => reviewSelection('declined')}
+                        loading={busy}
+                      >
+                        Decline selection
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {selected.selectionStatusHistory?.length ? (
+                  <div className="mt-4 border-t border-cocoa-900/10 pt-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cocoa-500">
+                      Selection history
+                    </p>
+                    <ul className="mt-2 space-y-1 text-xs text-cocoa-600">
+                      {selected.selectionStatusHistory.map((event, index) => (
+                        <li key={`${event.status}-${index}`}>
+                          {event.status.replaceAll('_', ' ')} ·{' '}
+                          {new Date(event.changedAt).toLocaleString('en-RW', {
+                            timeZone: 'Africa/Kigali',
+                          })}
+                          {event.note ? ` · ${event.note}` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
 
               {canChangeStatus || canReschedule ? (
                 <div className="mt-4">

@@ -47,7 +47,7 @@
   }
 
   .customer-ui .font-price {
-    font-family: theme('fontFamily.display');
+    @apply font-sans;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
   }

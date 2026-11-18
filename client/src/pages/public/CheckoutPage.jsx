@@ -68,20 +68,12 @@ export function CheckoutPage() {
       paymentMethod: '',
       notes: '',
       deliveryLine1: '',
-      deliveryLine2: '',
-      deliveryCity: 'Kigali',
-      deliveryDistrict: '',
-      deliverySector: '',
       deliveryNotes: '',
     },
   });
   const fulfillmentType = watch('fulfillmentType');
   const paymentMethod = watch('paymentMethod');
   const deliveryLine1 = watch('deliveryLine1');
-  const deliveryLine2 = watch('deliveryLine2');
-  const deliveryCity = watch('deliveryCity');
-  const deliveryDistrict = watch('deliveryDistrict');
-  const deliverySector = watch('deliverySector');
 
   usePageMeta({
     title: 'Checkout',
@@ -100,16 +92,7 @@ export function CheckoutPage() {
     [items],
   );
 
-  const deliveryAddress = useMemo(
-    () => ({
-      line1: deliveryLine1 ?? '',
-      line2: deliveryLine2 ?? '',
-      city: deliveryCity ?? '',
-      district: deliveryDistrict ?? '',
-      sector: deliverySector ?? '',
-    }),
-    [deliveryLine1, deliveryLine2, deliveryCity, deliveryDistrict, deliverySector],
-  );
+  const deliveryAddress = useMemo(() => ({ line1: deliveryLine1 ?? '' }), [deliveryLine1]);
 
   useEffect(() => {
     if (items.length === 0) return undefined;
@@ -181,14 +164,7 @@ export function CheckoutPage() {
           fulfillmentType: values.fulfillmentType,
           deliveryAddress:
             values.fulfillmentType === 'delivery'
-              ? {
-                  line1: values.deliveryLine1,
-                  line2: values.deliveryLine2,
-                  city: values.deliveryCity,
-                  district: values.deliveryDistrict,
-                  sector: values.deliverySector,
-                  notes: values.deliveryNotes,
-                }
+              ? { line1: values.deliveryLine1, notes: values.deliveryNotes }
               : undefined,
           customer: { name: values.name, email: values.email, phone: values.phone },
           notes: values.notes,
@@ -317,32 +293,16 @@ export function CheckoutPage() {
             </div>
 
             {fulfillmentType === 'delivery' ? (
-              <div className="mt-5 grid gap-5 border-t border-cocoa-900/10 pt-5 sm:grid-cols-2">
+              <div className="mt-5 grid gap-5 border-t border-cocoa-900/10 pt-5">
                 <Field
-                  label="Address line"
+                  label="Delivery address"
                   required
                   error={errors.deliveryLine1?.message}
-                  className="sm:col-span-2"
+                  hint="Include the street, building, area or landmark so the team can find you."
                 >
-                  <Input autoComplete="address-line1" {...register('deliveryLine1')} />
+                  <Input autoComplete="street-address" {...register('deliveryLine1')} />
                 </Field>
-                <Field label="Apartment, floor or landmark" error={errors.deliveryLine2?.message}>
-                  <Input autoComplete="address-line2" {...register('deliveryLine2')} />
-                </Field>
-                <Field label="Sector" error={errors.deliverySector?.message}>
-                  <Input {...register('deliverySector')} />
-                </Field>
-                <Field label="City" error={errors.deliveryCity?.message}>
-                  <Input autoComplete="address-level2" {...register('deliveryCity')} />
-                </Field>
-                <Field
-                  label="District"
-                  error={errors.deliveryDistrict?.message}
-                  hint="City or district helps the server match a delivery zone."
-                >
-                  <Input autoComplete="address-level1" {...register('deliveryDistrict')} />
-                </Field>
-                <Field label="Delivery notes" error={errors.deliveryNotes?.message} className="sm:col-span-2">
+                <Field label="Delivery notes" error={errors.deliveryNotes?.message}>
                   <Input {...register('deliveryNotes')} />
                 </Field>
               </div>
@@ -424,7 +384,10 @@ export function CheckoutPage() {
           </fieldset>
 
           {submitError ? (
-            <p role="alert" className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-sm text-danger">
+            <p
+              role="alert"
+              className="rounded-xl border border-danger/20 bg-danger/5 p-4 text-sm text-danger"
+            >
               {submitError}
             </p>
           ) : null}

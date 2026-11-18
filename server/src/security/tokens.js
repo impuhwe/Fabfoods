@@ -37,6 +37,21 @@ export function hashRefreshToken(token) {
   return createHmac('sha256', env.REFRESH_TOKEN_PEPPER).update(token).digest('hex');
 }
 
+const ADMIN_INVITATION_CONTEXT = 'admin-invitation';
+
+export function createAdminInvitationToken() {
+  return createRefreshToken();
+}
+
+export function hashAdminInvitationToken(token) {
+  if (typeof token !== 'string' || token.length === 0) {
+    throw new TypeError('Admin invitation token must be a non-empty string');
+  }
+  return createHmac('sha256', env.REFRESH_TOKEN_PEPPER)
+    .update(`${ADMIN_INVITATION_CONTEXT}:${token}`)
+    .digest('hex');
+}
+
 export function generateCsrfToken() {
   return randomBytes(32).toString('hex');
 }

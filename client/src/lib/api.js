@@ -3,7 +3,13 @@ import axios from 'axios';
 const DEFAULT_API_BASE_URL = '/api/v1';
 const CSRF_COOKIE = 'ff_csrf';
 const UNSAFE_METHODS = new Set(['post', 'put', 'patch', 'delete']);
-const NO_REFRESH_PATHS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'];
+const NO_REFRESH_PATHS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/logout',
+  '/invitations/accept',
+];
 const STATUS_MESSAGES = {
   400: 'Please check the details and try again.',
   401: 'Your session has expired. Please sign in again.',

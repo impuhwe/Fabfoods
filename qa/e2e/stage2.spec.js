@@ -1,6 +1,15 @@
 import { test, expect } from '@playwright/test';
 
-const PUBLIC_ROUTES = ['/', '/menu', '/about', '/gallery', '/reservations', '/contact', '/cart'];
+const PUBLIC_ROUTES = [
+  '/',
+  '/menu',
+  '/about',
+  '/gallery',
+  '/reservations',
+  '/catering',
+  '/contact',
+  '/cart',
+];
 
 async function expectNoHorizontalOverflow(page) {
   const overflow = await page.evaluate(() => {
