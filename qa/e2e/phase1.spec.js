@@ -215,7 +215,7 @@ test.describe('Phase 1 guest and typography requirements', () => {
     await page.getByLabel('Full name').fill('QA Date Guest');
     await page.getByLabel('Email').fill(`qa-date-${Date.now()}@example.com`);
     await page.getByLabel('Phone').fill('+250 788 000 777');
-    await page.getByLabel('Time').fill('19:00');
+    await page.getByLabel('Time').selectOption('19:00');
     await page.getByRole('button', { name: 'Send table request' }).click();
 
     await expect(page.getByText('Choose a valid date')).toBeVisible();

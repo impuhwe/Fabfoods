@@ -106,9 +106,6 @@ export async function createInvitation(input, actor, req) {
     throw serviceUnavailable('Invitation email delivery is not configured');
   }
 
-  if (await User.exists({ email: input.email })) {
-    throw conflict('An account with that email already exists', 'EMAIL_IN_USE');
-  }
   const existing = await AdminInvitation.exists({
     email: input.email,
     status: ADMIN_INVITATION_STATUS.PENDING,
@@ -116,6 +113,9 @@ export async function createInvitation(input, actor, req) {
   });
   if (existing) {
     throw conflict('A pending invitation already exists for that email', 'INVITATION_PENDING');
+  }
+  if (await User.exists({ email: input.email })) {
+    throw conflict('An account with that email already exists', 'EMAIL_IN_USE');
   }
 
   const token = createAdminInvitationToken();

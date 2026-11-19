@@ -57,17 +57,9 @@ export function Footer() {
 
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cream-100/65">
-              Account
+              Access
             </p>
             <ul className="mt-4 space-y-2 text-sm">
-              <li>
-                <Link
-                  to="/account"
-                  className="text-cream-100/75 transition-colors hover:text-cream-50"
-                >
-                  Your account
-                </Link>
-              </li>
               <li>
                 <Link
                   to="/cart"
@@ -78,18 +70,10 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/login"
-                  className="text-cream-100/75 transition-colors hover:text-cream-50"
-                >
-                  Sign in
-                </Link>
-              </li>
-              <li>
-                <Link
                   to="/admin/login"
                   className="text-cream-100/50 transition-colors hover:text-cream-50"
                 >
-                  Staff sign in
+                  Admin sign in
                 </Link>
               </li>
             </ul>
@@ -119,9 +103,7 @@ export function Footer() {
             >
               {contact.email}
             </a>
-            <p className="mt-3 text-xs leading-relaxed text-cream-100/65">
-              {contact.hoursSummary}
-            </p>
+            <p className="mt-3 text-xs leading-relaxed text-cream-100/65">{contact.hoursSummary}</p>
             <Link
               to="/contact"
               className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-ember-300 hover:text-ember-200"

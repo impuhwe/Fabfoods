@@ -1,5 +1,15 @@
+export const RESTAURANT_TIME_ZONE = 'Africa/Kigali';
+export const RESTAURANT_TIME_ZONE_LABEL = 'Africa/Kigali (UTC+2)';
+
+export const RESERVATION_TIME_OPTIONS = Array.from({ length: 96 }, (_, index) => {
+  const hours = String(Math.floor(index / 4)).padStart(2, '0');
+  const minutes = String((index % 4) * 15).padStart(2, '0');
+  const value = `${hours}:${minutes}`;
+  return { value, label: value };
+});
+
 const KIGALI_DATE_FORMAT = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Africa/Kigali',
+  timeZone: RESTAURANT_TIME_ZONE,
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',

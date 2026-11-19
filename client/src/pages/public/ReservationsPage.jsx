@@ -17,14 +17,19 @@ import Button from '../../components/ui/Button.jsx';
 import DatePicker from '../../components/ui/DatePicker.jsx';
 import Field from '../../components/ui/Field.jsx';
 import Input, { inputClasses } from '../../components/ui/Input.jsx';
+import Select from '../../components/ui/Select.jsx';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { getApiErrorMessage } from '../../lib/api.js';
-import { getKigaliDateBounds } from '../../lib/calendarDate.js';
-import { OCCASIONS } from '../../lib/site.js';
+import {
+  getKigaliDateBounds,
+  RESERVATION_TIME_OPTIONS,
+  RESTAURANT_TIME_ZONE_LABEL,
+} from '../../lib/calendarDate.js';
+import { formatApprovedHours, OCCASIONS } from '../../lib/site.js';
 import { HIGH_PRIORITY_IMAGE_PROPS, RESERVATION_IMAGE } from '../../lib/imagery.js';
 import { reservationFormSchema } from '../../lib/validation.js';
-import { requestReservation } from '../../services/publicApi.js';
+import { getPublicSettings, requestReservation } from '../../services/publicApi.js';
 
 const OCCASION_ICONS = {
   Birthday: Cake,
@@ -38,6 +43,7 @@ export function ReservationsPage() {
   const { user } = useAuth();
   const [reservation, setReservation] = useState(null);
   const [submitError, setSubmitError] = useState('');
+  const [approvedHours, setApprovedHours] = useState([]);
   const { min: minDate, max: maxDate } = getKigaliDateBounds();
   const {
     register,
@@ -71,6 +77,18 @@ export function ReservationsPage() {
       'Request a table at FAB FOODS in Kigali. Requests are reviewed and confirmed by the restaurant.',
     image: RESERVATION_IMAGE,
   });
+
+  useEffect(() => {
+    let active = true;
+    getPublicSettings()
+      .then((settings) => {
+        if (active) setApprovedHours(formatApprovedHours(settings?.hours));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -228,9 +246,15 @@ export function ReservationsPage() {
               label="Time"
               required
               error={errors.time?.message}
-              hint="A preferred request window — not a published opening-hours slot."
+              hint={`Times are in ${RESTAURANT_TIME_ZONE_LABEL}. This is a request, not a confirmed slot.`}
             >
-              <Input type="time" step={900} {...register('time')} />
+              <Select {...register('time')}>
+                {RESERVATION_TIME_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
             </Field>
             <fieldset className="sm:col-span-2">
               <legend
@@ -389,11 +413,24 @@ export function ReservationsPage() {
             </ul>
           </div>
           <div className="rounded-2xl border border-warning/25 bg-warning/5 p-5 text-sm text-cocoa-700">
-            <p className="font-semibold">Opening hours are being confirmed.</p>
-            <p className="mt-1">
-              We are not publishing hours until the owner approves them. The restaurant will advise
-              on timing when it responds to your request.
-            </p>
+            {approvedHours.length > 0 ? (
+              <>
+                <p className="font-semibold">Opening hours</p>
+                <ul className="mt-2 space-y-1">
+                  {approvedHours.map((entry) => (
+                    <li key={entry.label} className="flex justify-between gap-4">
+                      <span>{entry.label}</span>
+                      <span className="font-medium text-cocoa-900">{entry.value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p>
+                Requested times are subject to restaurant confirmation. The team will advise you
+                when it responds to your request.
+              </p>
+            )}
           </div>
         </aside>
       </section>

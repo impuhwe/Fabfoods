@@ -34,9 +34,7 @@ function invitationPayload(email) {
 }
 
 function inviteUrlFromEmail(email) {
-  const call = [...sendEmailMock.mock.calls]
-    .reverse()
-    .find(([message]) => message.to === email);
+  const call = [...sendEmailMock.mock.calls].reverse().find(([message]) => message.to === email);
   const text = call?.[0]?.text ?? '';
   const match = text.match(/Accept at (https?:\/\/\S+)/);
   if (!match) throw new Error(`No invitation link captured for ${email}`);
@@ -227,11 +225,7 @@ describe('administrator invitations', () => {
 
   it('lets the invitee activate an administrator account and rejects token reuse', async () => {
     const email = 'accepted-admin@example.com';
-    const created = await postWithCsrf(
-      '/admin/invitations',
-      invitationPayload(email),
-      tokens.admin,
-    ).expect(201);
+    await postWithCsrf('/admin/invitations', invitationPayload(email), tokens.admin).expect(201);
     const token = tokenFromEmail(email);
 
     const accepted = await postWithCsrf(

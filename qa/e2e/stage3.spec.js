@@ -80,7 +80,7 @@ test('admin approves a pending reservation', async ({ page }) => {
   await page.getByLabel('Full name').fill('QA Stage Three Guest');
   await page.getByLabel('Email').fill(guestEmail);
   await page.getByLabel('Phone').fill('+250 788 000 444');
-  await page.getByLabel('Time').fill('19:30');
+  await page.getByLabel('Time').selectOption('19:30');
   await page.getByRole('button', { name: 'Send table request' }).click();
 
   await expect(page.getByRole('heading', { name: /Thank you, QA/ })).toBeVisible();

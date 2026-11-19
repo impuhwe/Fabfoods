@@ -368,10 +368,11 @@ business activates them.
 **Publication gate for unconfirmed business facts:** a public settings response only includes
 contact fields when `verification.contactApprovedAt` is set, hours only when
 `verification.hoursApprovedAt` is set, and delivery zones only when both
-`verification.deliveryApprovedAt` is set and the zone `isVerified` is true. Unapproved values are
-stored, editable and visible to admins, but never rendered on the public site. The UI shows a
-neutral "details being confirmed" state instead. Production launch checklist requires all three
-approvals.
+`verification.deliveryApprovedAt` is set and the zone `isVerified` is true. Unapproved
+admin-entered values are stored, editable and visible to admins, but not returned by the public
+API. Production launch checklist requires all three approvals. The contact page and footer
+currently use supplied reference details as a client fallback until owner approval is recorded;
+approved public settings override them.
 
 ### 3.11 `emailoutbox`
 

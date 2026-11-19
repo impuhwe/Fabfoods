@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, ShoppingBag, UserRound } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext.jsx';
+import { Menu, ShoppingBag } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext.jsx';
 import { cn } from '../../lib/cn.js';
 import { NAV_LINKS } from '../../lib/site.js';
@@ -23,7 +22,6 @@ function Wordmark({ onNavigate }) {
 }
 
 export function Header() {
-  const { user } = useAuth();
   const { itemCount, openCart } = useCart();
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -62,14 +60,6 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1">
-          <Link
-            to={user ? '/account' : '/login'}
-            className="hidden h-10 items-center gap-2 rounded-full px-3 text-sm font-medium text-cocoa-700 transition-colors hover:bg-cream-200 sm:inline-flex"
-          >
-            <UserRound className="h-4 w-4" aria-hidden="true" />
-            {user ? user.name.split(' ')[0] : 'Sign in'}
-          </Link>
-
           <button
             type="button"
             onClick={openCart}
@@ -124,13 +114,6 @@ export function Header() {
             className="inline-flex h-12 items-center justify-center rounded-full bg-ember-500 text-sm font-semibold text-white"
           >
             Order now
-          </Link>
-          <Link
-            to={user ? '/account' : '/login'}
-            onClick={() => setOpen(false)}
-            className="inline-flex h-12 items-center justify-center rounded-full border border-cocoa-900/20 text-sm font-semibold text-cocoa-900"
-          >
-            {user ? 'Your account' : 'Sign in'}
           </Link>
         </div>
         <p className="mt-6 text-xs leading-relaxed text-cocoa-500">

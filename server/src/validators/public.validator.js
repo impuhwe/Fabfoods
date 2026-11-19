@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { FULFILLMENT_TYPES, MENU_CATEGORY_KIND_VALUES } from '../config/constants.js';
+import { kigaliDateString } from '../config/time.js';
 
 const slugSchema = z
   .string()
@@ -8,11 +9,8 @@ const slugSchema = z
   .max(120)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Must be lowercase kebab-case');
 
-const kigaliDate = (date = new Date()) =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(date);
-
-const today = kigaliDate();
-const latest = kigaliDate(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000));
+const today = kigaliDateString();
+const latest = kigaliDateString(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000));
 
 export const menuQuerySchema = z
   .object({

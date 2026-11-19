@@ -1,5 +1,6 @@
 ﻿import { randomInt } from 'node:crypto';
 import { RESERVATION_SELECTION_STATUSES, RESERVATION_STATUSES } from '../config/constants.js';
+import { kigaliDateString, kigaliDayBounds, kigaliInstant } from '../config/time.js';
 import Reservation from '../models/Reservation.js';
 import { enqueueEmail } from './email.service.js';
 import { getSettings } from './settings.service.js';
@@ -203,12 +204,12 @@ export async function createReservation(payload, user = null) {
   }
 
   const latest = new Date(Date.now() + settings.reservations.maxDaysAhead * 24 * 60 * 60 * 1000);
-  const latestDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(latest);
+  const latestDate = kigaliDateString(latest);
   if (payload.date > latestDate) {
     throw badRequest(`Choose a date within the next ${settings.reservations.maxDaysAhead} days`);
   }
 
-  const startAt = new Date(`${payload.date}T${payload.time}:00+02:00`);
+  const startAt = kigaliInstant(payload.date, payload.time);
 
   for (let attempt = 0; attempt < 6; attempt += 1) {
     try {
@@ -267,10 +268,7 @@ export async function listAdminReservations({ status, date, page = 1, limit = 50
   const filter = {};
   if (status) filter.status = status;
   if (date) {
-    filter.startAt = {
-      $gte: new Date(`${date}T00:00:00+02:00`),
-      $lt: new Date(`${date}T23:59:59.999+02:00`),
-    };
+    filter.startAt = kigaliDayBounds(date);
   }
 
   const skip = (page - 1) * limit;
@@ -345,7 +343,7 @@ export async function rescheduleAdminReservation(id, input, adminId) {
   }
 
   const latest = new Date(Date.now() + settings.reservations.maxDaysAhead * 24 * 60 * 60 * 1000);
-  const latestDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(latest);
+  const latestDate = kigaliDateString(latest);
   if (input.date > latestDate) {
     throw badRequest(`Choose a date within the next ${settings.reservations.maxDaysAhead} days`);
   }
@@ -353,7 +351,7 @@ export async function rescheduleAdminReservation(id, input, adminId) {
   reservation.date = input.date;
   reservation.time = input.time;
   reservation.partySize = input.partySize;
-  reservation.startAt = new Date(`${input.date}T${input.time}:00+02:00`);
+  reservation.startAt = kigaliInstant(input.date, input.time);
   addHistory(
     reservation,
     reservation.status,

@@ -79,10 +79,10 @@ route re-checks the role server-side.
 - **FR-4** About page with brand story and gallery. All unknown content is admin-editable, never
   invented.
 - **FR-5** Reservations page with validated request form; requests are **never** auto-confirmed.
-- **FR-6** Contact page with form, address/phone/email, opening hours, map, WhatsApp
-  button and social links — all sourced from `RestaurantSettings`. Any business fact not approved
-  by the owner is **not published**: the field is hidden and the section shows a neutral
-  "details being confirmed" state. Approved values become visible without a code change.
+- **FR-6** Contact page with form, clickable address/phone/email links, opening hours and a map
+  link. Approved `RestaurantSettings` values override the supplied reference defaults. Owner
+  sign-off on those reference values is still outstanding; admin-editable approved values become
+  visible without a code change. WhatsApp and social links remain unpublished until supplied.
 - **FR-6a** Delivery fees, minimum orders and ETAs are likewise unpublished and unusable until an
   admin marks the zone/rule verified; ordering falls back to pickup.
 - **FR-7** Prices displayed in RWF with grouped thousands (`RWF 8,000`). Stored as integers.
@@ -271,8 +271,8 @@ phase scope are not started early.
 | --- | --- | --- |
 | Q1 | **PDFs transcribed; business review pending.** Active manifest has 121 priced lines, 118 modeled records and 24 flags. Confirm flagged names, prices, categories, breakfast components and options before clearing `needsReview`. | Public menu copy accuracy; not development progress |
 | Q2 | ~~Brand spelling~~ **Decided:** use "FAB FOODS" as the working name. Keep it un-finalised and admin-editable; no alternative spelling is adopted. | — |
-| Q3 | **Owner approval** of address, phone, email and WhatsApp number. Working values from the live site: 44 KG 548 St, Kacyiru (inside FabLab Rwanda); +250 788 756 286; info@fablab.rw. **Unapproved values stay unpublished in the UI.** | Contact page publication, emails, WhatsApp |
-| Q4 | **Owner approval** of opening hours, including public holidays and Sunday closure. Unapproved hours are not published and do not drive reservation validation. | Contact publication, reservation rules |
+| Q3 | **Owner confirmation outstanding** for address, phone, email and WhatsApp number. The supplied reference values are published as clickable defaults: 44 KG 548 St, Kacyiru, Kigali, Rwanda; +250 788 756 286; info@fablab.rw. Approved `RestaurantSettings` override them; WhatsApp remains unpublished. | Final business sign-off, WhatsApp publication |
+| Q4 | **Owner confirmation outstanding** for opening hours, including public holidays. Supplied reference hours are published as defaults and do not drive reservation validation. Approved `RestaurantSettings` hours override them. | Final business sign-off, reservation rules |
 | Q5 | **Drinks/coffee catalogue**: the drink PDF is transcribed (8 categories, 63 product records), all `needsReview: true`. Confirm flagged naming/category items and supply descriptions/claims only if printed or approved. | Drink public copy accuracy |
 | Q6 | Delivery operating rules: zones, fees, minimum order, ETA, pickup prep time. Unapproved rules stay unpublished and unusable; delivery remains off. | Delivery activation |
 | Q7 | **Payment provider selection** for Mobile Money and card (e.g. MTN MoMo / Airtel Money / a card gateway), merchant account, webhook secret, sandbox credentials, refund policy. Architecture proceeds provider-agnostically; activation is blocked. | Phase 5 activation |

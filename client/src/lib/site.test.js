@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CONTACT_DETAILS, resolveContactDetails } from './site.js';
+import { CONTACT_DETAILS, formatApprovedHours, resolveContactDetails } from './site.js';
+
+describe('formatApprovedHours', () => {
+  it('returns no rows when no hours were approved', () => {
+    expect(formatApprovedHours([])).toEqual([]);
+    expect(formatApprovedHours(undefined)).toEqual([]);
+  });
+});
 
 describe('resolveContactDetails', () => {
   it('uses the supplied reference details when public settings are unavailable', () => {

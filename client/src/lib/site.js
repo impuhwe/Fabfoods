@@ -32,7 +32,8 @@ function mapUrl(address) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
-function publicHours(hours) {
+export function formatApprovedHours(hours) {
+  if (!Array.isArray(hours) || hours.length === 0) return [];
   return hours
     .slice()
     .sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day))
@@ -45,7 +46,9 @@ function publicHours(hours) {
 export function resolveContactDetails(settings) {
   const contact = settings?.contact;
   const address = contact?.address || CONTACT_DETAILS.address;
-  const hours = settings?.hours?.length ? publicHours(settings.hours) : CONTACT_DETAILS.hours;
+  const hours = settings?.hours?.length
+    ? formatApprovedHours(settings.hours)
+    : CONTACT_DETAILS.hours;
 
   return {
     phone: contact?.phone || CONTACT_DETAILS.phone,

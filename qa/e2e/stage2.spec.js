@@ -88,7 +88,9 @@ test.describe('public pages', () => {
     await page.getByLabel('Full name').fill('QA Guest');
     await page.getByLabel('Email').fill(`qa-reservation-${Date.now()}@example.com`);
     await page.getByLabel('Phone').fill('+250 788 000 111');
-    await page.getByLabel('Time').fill('19:00');
+    await expect(page.getByText(/Times are in Africa\/Kigali \(UTC\+2\)/)).toBeVisible();
+    await page.getByLabel('Time').selectOption('19:00');
+    await expect(page.getByText(/MIAMI/i)).toHaveCount(0);
 
     const requestPromise = page.waitForRequest('**/api/v1/reservations');
     await page.getByRole('button', { name: 'Send table request' }).click();
@@ -124,8 +126,9 @@ test.describe('public pages', () => {
       'href',
       'mailto:info@fablab.rw',
     );
-    await expect(main.getByRole('link', { name: /44 KG 548 St, Kacyiru, Kigali, Rwanda/ }))
-      .toHaveAttribute('href', /google\.com\/maps\/search/);
+    await expect(
+      main.getByRole('link', { name: /44 KG 548 St, Kacyiru, Kigali, Rwanda/ }),
+    ).toHaveAttribute('href', /google\.com\/maps\/search/);
 
     await expect(main.getByText('Monday – Friday')).toBeVisible();
     await expect(main.getByText('08:00–21:30')).toBeVisible();
@@ -157,6 +160,61 @@ test.describe('public pages', () => {
     await expect(page.getByRole('heading', { name: /Hello, QA/ })).toBeVisible();
     await expect(page.getByText(email)).toBeVisible();
     await page.getByRole('button', { name: 'Sign out' }).click();
-    await expect(page.getByRole('link', { name: 'Sign in' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Your account' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Admin sign in' })).toBeVisible();
+  });
+
+  test('public navigation has no customer sign-in or registration entry point', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await expect(page.locator('header').getByRole('link', { name: 'Sign in' })).toHaveCount(0);
+    await expect(page.locator('header').getByRole('link', { name: /Create account/i })).toHaveCount(
+      0,
+    );
+    await expect(
+      page.locator('footer').getByRole('link', { name: 'Sign in', exact: true }),
+    ).toHaveCount(0);
+    await expect(page.locator('footer').getByRole('link', { name: 'Your account' })).toHaveCount(0);
+    await expect(
+      page.locator('footer').getByRole('link', { name: 'Admin sign in' }),
+    ).toHaveAttribute('href', '/admin/login');
+
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    await expect(page.getByRole('navigation', { name: 'Mobile' }).getByText('Sign in')).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('button', { name: 'Open cart with 0 items' })).toBeVisible();
+  });
+});
+
+test.describe('reservation timezone in a non-Kigali browser', () => {
+  test.use({ timezoneId: 'America/New_York' });
+
+  test('submits Kigali wall-clock time without converting to the browser timezone', async ({
+    page,
+  }) => {
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(
+      new Date(),
+    );
+
+    await page.goto('/reservations');
+    await expect(page.getByText(/Times are in Africa\/Kigali \(UTC\+2\)/)).toBeVisible();
+    await expect(page.getByText(/MIAMI/i)).toHaveCount(0);
+    await page.getByLabel('Full name').fill('Timezone Guest');
+    await page.getByLabel('Email').fill(`qa-timezone-${Date.now()}@example.com`);
+    await page.getByLabel('Phone').fill('+250 788 000 333');
+    await page.getByLabel('Time').selectOption('19:00');
+    await expect(page.getByText(`${today} at 19:00`)).toBeVisible();
+
+    const requestPromise = page.waitForRequest('**/api/v1/reservations');
+    await page.getByRole('button', { name: 'Send table request' }).click();
+    const request = await requestPromise;
+    expect(request.postDataJSON()).toMatchObject({ date: today, time: '19:00' });
+
+    await expect(page.getByRole('heading', { name: /Thank you, Timezone/ })).toBeVisible();
+    await expect(page.getByText(/not confirmed/i).first()).toBeVisible();
   });
 });

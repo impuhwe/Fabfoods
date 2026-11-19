@@ -96,6 +96,24 @@ describe('reservation requests without food or drink selection', () => {
     expect(await Order.countDocuments({})).toBe(0);
   });
 
+  it('interprets the submitted time in Kigali regardless of the host timezone', async () => {
+    const body = payload({ time: '19:00' });
+    const previousTimeZone = process.env.TZ;
+    process.env.TZ = 'America/New_York';
+
+    try {
+      const response = await createReservation(body);
+
+      expect(response.status).toBe(201);
+      const stored = await Reservation.findById(response.body.data.reservation.id).lean();
+      expect(stored).toMatchObject({ date: body.date, time: '19:00' });
+      expect(stored.startAt.toISOString()).toBe(`${body.date}T17:00:00.000Z`);
+    } finally {
+      if (previousTimeZone === undefined) delete process.env.TZ;
+      else process.env.TZ = previousTimeZone;
+    }
+  });
+
   it('keeps legacy selection data read-only in admin details', async () => {
     const legacy = await Reservation.create({
       reference: `RS-LEGACY-${Date.now()}`,
