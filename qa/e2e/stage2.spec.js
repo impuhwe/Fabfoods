@@ -88,9 +88,12 @@ test.describe('public pages', () => {
     await page.getByLabel('Full name').fill('QA Guest');
     await page.getByLabel('Email').fill(`qa-reservation-${Date.now()}@example.com`);
     await page.getByLabel('Phone').fill('+250 788 000 111');
-    await page.getByLabel('Date').fill(today);
     await page.getByLabel('Time').fill('19:00');
+
+    const requestPromise = page.waitForRequest('**/api/v1/reservations');
     await page.getByRole('button', { name: 'Send table request' }).click();
+    const request = await requestPromise;
+    expect(request.postDataJSON()).toMatchObject({ date: today, time: '19:00' });
 
     await expect(page.getByRole('heading', { name: /Thank you, QA/ })).toBeVisible();
     await expect(page.getByText(/not confirmed/i).first()).toBeVisible();
@@ -106,6 +109,38 @@ test.describe('public pages', () => {
 
     await expect(page.getByRole('heading', { name: 'Message received.' })).toBeVisible();
     await expect(page.getByText(/Email delivery is not connected/i)).toBeVisible();
+  });
+
+  test('contact details are clickable and consistent with the footer', async ({ page }) => {
+    await page.goto('/contact');
+    const main = page.locator('#main');
+    const footer = page.locator('footer');
+
+    await expect(main.getByRole('link', { name: '+250 788 756 286' })).toHaveAttribute(
+      'href',
+      'tel:+250788756286',
+    );
+    await expect(main.getByRole('link', { name: 'info@fablab.rw' })).toHaveAttribute(
+      'href',
+      'mailto:info@fablab.rw',
+    );
+    await expect(main.getByRole('link', { name: /44 KG 548 St, Kacyiru, Kigali, Rwanda/ }))
+      .toHaveAttribute('href', /google\.com\/maps\/search/);
+
+    await expect(main.getByText('Monday – Friday')).toBeVisible();
+    await expect(main.getByText('08:00–21:30')).toBeVisible();
+    await expect(main.getByText('09:00–21:30')).toBeVisible();
+    await expect(main.getByText('Closed')).toBeVisible();
+
+    for (const name of [
+      '+250 788 756 286',
+      'info@fablab.rw',
+      /44 KG 548 St, Kacyiru, Kigali, Rwanda/,
+    ]) {
+      const mainHref = await main.getByRole('link', { name }).getAttribute('href');
+      const footerHref = await footer.getByRole('link', { name }).getAttribute('href');
+      expect(footerHref).toBe(mainHref);
+    }
   });
 
   test('register, account and sign out work', async ({ page }) => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { addDaysToDateString, getKigaliDateBounds, isValidDateString } from './calendarDate.js';
 import {
   cateringFormSchema,
   checkoutFormSchema,
@@ -45,6 +46,25 @@ describe('reservationFormSchema', () => {
     );
     expect(reservationFormSchema.safeParse({ ...reservation, time: '25:00' }).success).toBe(false);
     expect(reservationFormSchema.safeParse({ ...reservation, partySize: 21 }).success).toBe(false);
+  });
+
+  it('rejects missing, impossible and out-of-range dates', () => {
+    expect(reservationFormSchema.safeParse({ ...reservation, date: '' }).success).toBe(false);
+    expect(reservationFormSchema.safeParse({ ...reservation, date: '2026-02-31' }).success).toBe(
+      false,
+    );
+    expect(reservationFormSchema.safeParse({ ...reservation, date: kigaliDate(91) }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe('calendarDate helpers', () => {
+  it('keeps Kigali date bounds and date strings consistent', () => {
+    const { min, max } = getKigaliDateBounds();
+    expect(isValidDateString(min)).toBe(true);
+    expect(addDaysToDateString(min, 90)).toBe(max);
+    expect(isValidDateString('2026-02-30')).toBe(false);
   });
 });
 
@@ -98,8 +118,11 @@ describe('cateringFormSchema', () => {
     expect(cateringFormSchema.safeParse({ ...catering, eventDate: '' }).success).toBe(true);
   });
 
-  it('rejects invalid event types and unsupported guest counts', () => {
+  it('rejects invalid event types, dates and unsupported guest counts', () => {
     expect(cateringFormSchema.safeParse({ ...catering, eventType: 'unknown' }).success).toBe(false);
+    expect(cateringFormSchema.safeParse({ ...catering, eventDate: '2026-02-31' }).success).toBe(
+      false,
+    );
     expect(cateringFormSchema.safeParse({ ...catering, guestCount: 1001 }).success).toBe(false);
   });
 });

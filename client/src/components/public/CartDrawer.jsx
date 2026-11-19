@@ -22,7 +22,7 @@ export function CartDrawer() {
           <p className="mt-2 max-w-[16rem] text-sm text-cocoa-600">
             Browse the menu and add something from the kitchen.
           </p>
-          <Button asChild className="mt-6" onClick={closeCart}>
+          <Button asChild variant="order" className="mt-6" onClick={closeCart}>
             <Link to="/menu">Explore the menu</Link>
           </Button>
         </div>
@@ -79,7 +79,7 @@ export function CartDrawer() {
               Prices are confirmed by the restaurant at checkout.
             </p>
             <div className="mt-4 grid gap-2">
-              <Button asChild onClick={closeCart}>
+              <Button asChild variant="order" onClick={closeCart}>
                 <Link to="/checkout">Review checkout</Link>
               </Button>
               <Button asChild variant="secondary" onClick={closeCart}>

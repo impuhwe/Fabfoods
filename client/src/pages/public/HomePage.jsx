@@ -112,7 +112,7 @@ export function HomePage() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button asChild size="lg">
+              <Button asChild variant="order" size="lg">
                 <Link to="/menu">
                   Order now
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -322,7 +322,7 @@ export function HomePage() {
             Browse the drinks listed in the current menu and add what you want to your pickup order.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild>
+            <Button asChild variant="order">
               <Link to="/menu?kind=drink">
                 Explore drinks
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -381,7 +381,7 @@ export function HomePage() {
               confirmed automatically. No payment is taken online.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild>
+              <Button asChild variant="order">
                 <Link to="/reservations">
                   Request a table
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -414,7 +414,7 @@ export function HomePage() {
               </p>
             </div>
           </div>
-          <Button asChild>
+          <Button asChild variant="order">
             <Link to="/contact">Contact us</Link>
           </Button>
         </div>

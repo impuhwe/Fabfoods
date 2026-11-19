@@ -23,7 +23,7 @@ export function CartPage() {
           title="Your order is empty"
           description="Add something from the menu to get started."
           action={
-            <Button asChild>
+            <Button asChild variant="order">
               <Link to="/menu">Explore the menu</Link>
             </Button>
           }
@@ -106,7 +106,7 @@ export function CartPage() {
             This is an estimate. The restaurant confirms prices, availability and pickup timing at
             checkout.
           </p>
-          <Button asChild size="lg" className="mt-5 w-full">
+          <Button asChild variant="order" size="lg" className="mt-5 w-full">
             <Link to="/checkout">Continue to checkout</Link>
           </Button>
           <Button asChild variant="ghost" className="mt-2 w-full">

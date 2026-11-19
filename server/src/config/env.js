@@ -50,6 +50,7 @@ const schema = z
     PAYMENT_REDIRECT_URL: z.string().optional().default(''),
     EMAIL_DELIVERY_ENABLED: booleanFromEnv(false),
     BREVO_API_KEY: z.string().optional().default(''),
+    BREVO_API_URL: z.string().url().default('https://api.brevo.com/v3/smtp/email'),
     EMAIL_FROM_EMAIL: z.string().optional().default(''),
     EMAIL_FROM_NAME: z.string().optional().default('Fabs Restaurant'),
     EMAIL_OUTBOX_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(20),
@@ -118,6 +119,14 @@ const schema = z
           });
         }
       }
+    }
+
+    if (value.NODE_ENV === 'production' && !value.BREVO_API_URL.startsWith('https://')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['BREVO_API_URL'],
+        message: 'must use https in production',
+      });
     }
 
     const cloudinaryKeys = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];

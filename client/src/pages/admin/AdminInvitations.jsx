@@ -26,7 +26,7 @@ export function AdminInvitations() {
   const [status, setStatus] = useState('');
   const [invitations, setInvitations] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [inviteUrl, setInviteUrl] = useState('');
+  const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -55,10 +55,14 @@ export function AdminInvitations() {
     event.preventDefault();
     setBusy(true);
     setError('');
-    setInviteUrl('');
+    setNotice('');
     try {
       const result = await createAdminInvitation(form);
-      setInviteUrl(result.inviteUrl ?? '');
+      setNotice(
+        result.emailSent
+          ? 'The invitation was emailed. One-time links are never shown here.'
+          : 'The invitation was created, but the email provider did not confirm delivery.',
+      );
       setForm(EMPTY_FORM);
       addToast({
         title: result.emailSent ? 'Invitation emailed' : 'Invitation created',
@@ -109,8 +113,8 @@ export function AdminInvitations() {
         <Card>
           <CardTitle>Invite an administrator</CardTitle>
           <CardDescription>
-            The invitation is sent through the existing Brevo integration when email delivery is
-            configured. Otherwise the one-time link is shown here.
+            Invitations are sent through the existing Brevo integration. One-time links are never
+            shown here, logged or returned by the API.
           </CardDescription>
           <form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={createInvitation}>
             <Field label="Name">
@@ -140,10 +144,10 @@ export function AdminInvitations() {
               </Button>
             </div>
           </form>
-          {inviteUrl ? (
-            <div className="mt-4 rounded-lg border border-warning/25 bg-warning/5 p-3 text-xs text-cocoa-700">
-              <p className="font-semibold">Email delivery is not configured.</p>
-              <p className="mt-1 break-all">Share this one-time link securely: {inviteUrl}</p>
+          {notice ? (
+            <div className="mt-4 rounded-lg border border-success/25 bg-success/5 p-3 text-xs text-cocoa-700">
+              <p className="font-semibold">Invitation recorded.</p>
+              <p className="mt-1">{notice}</p>
             </div>
           ) : null}
         </Card>

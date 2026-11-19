@@ -45,11 +45,6 @@ export async function rescheduleAdminReservation(id, payload) {
   return data.data.reservation;
 }
 
-export async function updateAdminReservationSelectionStatus(id, payload) {
-  const { data } = await api.patch(`/admin/reservations/${id}/selection-status`, payload);
-  return data.data.reservation;
-}
-
 export async function getAdminSettings() {
   const { data } = await api.get('/admin/settings');
   return data.data;

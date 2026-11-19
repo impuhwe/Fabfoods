@@ -8,8 +8,12 @@ export const list = asyncHandler(async (req, res) => {
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const result = await invitationService.createInvitation(req.body, req.user, req);
-  sendSuccess(res, result, 201);
+  const { invitation, emailSent, emailError } = await invitationService.createInvitation(
+    req.body,
+    req.user,
+    req,
+  );
+  sendSuccess(res, { invitation, emailSent, emailError }, 201);
 });
 
 export const revoke = asyncHandler(async (req, res) => {

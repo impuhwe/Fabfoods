@@ -1,23 +1,32 @@
 import { z } from 'zod';
+import { getKigaliDateBounds, isValidDateString } from './calendarDate.js';
 
 const name = z.string().trim().min(2, 'Enter your full name').max(80);
 const email = z.string().trim().toLowerCase().email('Enter a valid email address').max(254);
 const phone = z.string().trim().min(7, 'Enter a contact phone number').max(30);
 
-const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(new Date());
-const latest = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(
-  new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-);
+const dateString = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose a valid date')
+  .refine(isValidDateString, 'Choose a valid date');
+
+const reservationDate = dateString.superRefine((value, ctx) => {
+  const { min, max } = getKigaliDateBounds();
+
+  if (value < min) {
+    ctx.addIssue({ code: 'custom', message: 'Choose a date from today onward' });
+  }
+
+  if (value > max) {
+    ctx.addIssue({ code: 'custom', message: 'Choose a date within the next 90 days' });
+  }
+});
 
 export const reservationFormSchema = z.object({
   name,
   email,
   phone,
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose a valid date')
-    .refine((value) => value >= today, 'Choose a date from today onward')
-    .refine((value) => value <= latest, 'Choose a date within the next 90 days'),
+  date: reservationDate,
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Choose a valid time'),
   partySize: z.coerce
     .number()
@@ -26,7 +35,6 @@ export const reservationFormSchema = z.object({
     .max(20, 'Use the contact form for larger parties'),
   occasion: z.string().max(80).default(''),
   specialRequests: z.string().max(600).default(''),
-  preparationNotes: z.string().max(500).default(''),
 });
 
 export const contactFormSchema = z.object({
@@ -41,9 +49,7 @@ export const cateringFormSchema = z.object({
   email,
   phone: z.string().trim().max(30).default(''),
   eventType: z.enum(['corporate', 'private', 'wedding', 'community', 'other']),
-  eventDate: z
-    .union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Choose a valid date'), z.literal('')])
-    .default(''),
+  eventDate: z.union([dateString, z.literal('')]).default(''),
   guestCount: z.coerce.number().int().min(1, 'Enter at least one guest').max(1000),
   location: z.string().trim().max(160).default(''),
   message: z.string().trim().min(10, 'Tell us a little more').max(2000),

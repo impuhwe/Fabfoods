@@ -55,7 +55,7 @@ export function MenuItemCard({ item }) {
         </Badge>
 
         {item.isOrderable && !hasOptions ? (
-          <Button size="sm" onClick={quickAdd}>
+          <Button size="sm" variant="order" onClick={quickAdd}>
             <Plus className="h-4 w-4" aria-hidden="true" />
             Add
           </Button>

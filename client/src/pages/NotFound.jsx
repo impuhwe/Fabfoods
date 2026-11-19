@@ -16,7 +16,7 @@ export function NotFound() {
         The page you asked for does not exist yet. The menu and ordering pages arrive in a later
         phase.
       </p>
-      <Button asChild className="mt-8">
+      <Button asChild variant="order" className="mt-8">
         <Link to="/">Back to home</Link>
       </Button>
     </div>

@@ -86,7 +86,7 @@ export function Header() {
 
           <Link
             to="/menu"
-            className="ml-1 hidden h-10 items-center rounded-full bg-ember-500 px-5 font-display text-base font-semibold text-cocoa-950 transition-colors hover:bg-ember-400 sm:inline-flex"
+            className="ml-1 hidden h-10 items-center rounded-full bg-ember-500 px-5 font-display text-base font-semibold text-white transition-colors hover:bg-ember-400 sm:inline-flex"
           >
             Order now
           </Link>
@@ -121,7 +121,7 @@ export function Header() {
           <Link
             to="/menu"
             onClick={() => setOpen(false)}
-            className="inline-flex h-12 items-center justify-center rounded-full bg-ember-500 text-sm font-semibold text-cocoa-950"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-ember-500 text-sm font-semibold text-white"
           >
             Order now
           </Link>

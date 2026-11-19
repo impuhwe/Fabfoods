@@ -202,7 +202,7 @@ export function CheckoutPage() {
           title="Nothing to check out"
           description="Add something from the menu first."
           action={
-            <Button asChild>
+            <Button asChild variant="order">
               <Link to="/menu">Explore the menu</Link>
             </Button>
           }
@@ -460,6 +460,7 @@ export function CheckoutPage() {
           <Button
             type="submit"
             form="checkout-form"
+            variant="order"
             size="lg"
             className="mt-5 w-full"
             disabled={!canSubmit}

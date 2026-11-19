@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useController, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle2, Users } from 'lucide-react';
 import Button from '../../components/ui/Button.jsx';
+import DatePicker from '../../components/ui/DatePicker.jsx';
 import Field from '../../components/ui/Field.jsx';
 import Input, { inputClasses } from '../../components/ui/Input.jsx';
-import Select from '../../components/ui/Select.jsx';
+import SelectMenu from '../../components/ui/SelectMenu.jsx';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { getApiErrorMessage } from '../../lib/api.js';
+import { getKigaliDateString } from '../../lib/calendarDate.js';
 import { cateringFormSchema } from '../../lib/validation.js';
 import { submitCateringRequest } from '../../services/publicApi.js';
 
@@ -22,8 +24,10 @@ const EVENT_TYPES = [
 export function CateringPage() {
   const [sent, setSent] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const minDate = getKigaliDateString();
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -40,6 +44,9 @@ export function CateringPage() {
       message: '',
     },
   });
+
+  const { field: eventTypeField } = useController({ control, name: 'eventType' });
+  const { field: eventDateField } = useController({ control, name: 'eventDate' });
 
   usePageMeta({
     title: 'Catering requests',
@@ -135,17 +142,28 @@ export function CateringPage() {
                   <Input type="tel" autoComplete="tel" {...register('phone')} />
                 </Field>
                 <Field label="Event type" required error={errors.eventType?.message}>
-                  <Select {...register('eventType')}>
-                    <option value="">Choose an event type</option>
-                    {EVENT_TYPES.map((entry) => (
-                      <option key={entry.value} value={entry.value}>
-                        {entry.label}
-                      </option>
-                    ))}
-                  </Select>
+                  <SelectMenu
+                    value={eventTypeField.value}
+                    onValueChange={eventTypeField.onChange}
+                    onBlur={eventTypeField.onBlur}
+                    ref={eventTypeField.ref}
+                    name={eventTypeField.name}
+                    options={EVENT_TYPES}
+                    placeholder="Select event type"
+                    invalid={Boolean(errors.eventType)}
+                  />
                 </Field>
                 <Field label="Event date" error={errors.eventDate?.message} hint="Optional">
-                  <Input type="date" {...register('eventDate')} />
+                  <DatePicker
+                    value={eventDateField.value}
+                    onChange={eventDateField.onChange}
+                    onBlur={eventDateField.onBlur}
+                    ref={eventDateField.ref}
+                    name={eventDateField.name}
+                    min={minDate}
+                    placeholder="Pick a date (optional)"
+                    invalid={Boolean(errors.eventDate)}
+                  />
                 </Field>
                 <Field label="Expected guests" required error={errors.guestCount?.message}>
                   <Input type="number" min="1" max="1000" {...register('guestCount')} />
@@ -177,7 +195,13 @@ export function CateringPage() {
                 </p>
               ) : null}
 
-              <Button type="submit" size="lg" className="mt-6" loading={isSubmitting}>
+              <Button
+                type="submit"
+                variant="order"
+                size="lg"
+                className="mt-6"
+                loading={isSubmitting}
+              >
                 Send catering request
               </Button>
             </form>

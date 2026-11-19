@@ -1,20 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, Mail, MapPin, MessageCircle } from 'lucide-react';
+import { CheckCircle2, Clock3, Mail, MapPin, Phone } from 'lucide-react';
 import Button from '../../components/ui/Button.jsx';
 import Field from '../../components/ui/Field.jsx';
 import Input, { inputClasses } from '../../components/ui/Input.jsx';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { getApiErrorMessage } from '../../lib/api.js';
+import { resolveContactDetails } from '../../lib/site.js';
 import { contactFormSchema } from '../../lib/validation.js';
-import { sendContactMessage } from '../../services/publicApi.js';
+import { getPublicSettings, sendContactMessage } from '../../services/publicApi.js';
 import { HERO_IMAGE } from '../../lib/imagery.js';
 
 export function ContactPage() {
   const [sent, setSent] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [contact, setContact] = useState(() => resolveContactDetails(null));
   const {
     register,
     handleSubmit,
@@ -25,10 +27,22 @@ export function ContactPage() {
     defaultValues: { name: '', email: '', phone: '', message: '' },
   });
 
+  useEffect(() => {
+    let active = true;
+    getPublicSettings()
+      .then((settings) => {
+        if (active) setContact(resolveContactDetails(settings));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   usePageMeta({
     title: 'Contact',
     description:
-      'Contact FAB FOODS in Kigali. Send a message to the restaurant team. Direct contact details are being confirmed.',
+      'Contact FAB FOODS in Kigali by phone, email or message. Find our address and opening hours.',
     image: HERO_IMAGE,
   });
 
@@ -57,8 +71,8 @@ export function ContactPage() {
               Tell us what you need.
             </h1>
             <p className="mt-3 text-base leading-relaxed text-cocoa-600">
-              Send a message to the FAB FOODS team. Direct phone, email, address and opening hours
-              are still being confirmed, so they are not published here yet.
+              Call, email or send a message to the FAB FOODS team. You can also find us in Kacyiru
+              and see our opening hours below.
             </p>
           </div>
         </div>
@@ -69,25 +83,68 @@ export function ContactPage() {
           <div className="rounded-2xl border border-cocoa-900/10 bg-cream-50 p-5">
             <h2 className="font-display text-xl font-semibold text-cocoa-950">Direct details</h2>
             <p className="mt-2 text-sm leading-relaxed text-cocoa-600">
-              These details are being confirmed with the owner. To avoid publishing wrong
-              information, the site does not show a phone number, email address, street address or
-              opening hours yet.
+              Reach the restaurant team directly, or use the form for a saved enquiry.
             </p>
             <ul className="mt-5 space-y-4 text-sm text-cocoa-600">
               <li className="flex gap-3">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-ember-700" aria-hidden="true" />
-                <span>Kigali, Rwanda</span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cocoa-500">
+                    Find us
+                  </p>
+                  <a
+                    href={contact.directionsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 block font-medium text-cocoa-900 underline decoration-ember-700/40 underline-offset-4 hover:text-ember-700"
+                  >
+                    {contact.address}
+                  </a>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-ember-700" aria-hidden="true" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cocoa-500">
+                    Call
+                  </p>
+                  <a
+                    href={contact.phoneHref}
+                    className="mt-1 block font-medium text-cocoa-900 underline decoration-ember-700/40 underline-offset-4 hover:text-ember-700"
+                  >
+                    {contact.phone}
+                  </a>
+                </div>
               </li>
               <li className="flex gap-3">
                 <Mail className="mt-0.5 h-4 w-4 shrink-0 text-ember-700" aria-hidden="true" />
-                <span>Email and phone: pending confirmation</span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cocoa-500">
+                    Email
+                  </p>
+                  <a
+                    href={contact.emailHref}
+                    className="mt-1 block font-medium text-cocoa-900 underline decoration-ember-700/40 underline-offset-4 hover:text-ember-700"
+                  >
+                    {contact.email}
+                  </a>
+                </div>
               </li>
               <li className="flex gap-3">
-                <MessageCircle
-                  className="mt-0.5 h-4 w-4 shrink-0 text-ember-700"
-                  aria-hidden="true"
-                />
-                <span>WhatsApp: pending confirmation</span>
+                <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-ember-700" aria-hidden="true" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cocoa-500">
+                    Opening hours
+                  </p>
+                  <ul className="mt-1 space-y-1">
+                    {contact.hours.map((entry) => (
+                      <li key={entry.label} className="flex justify-between gap-4">
+                        <span>{entry.label}</span>
+                        <span className="font-medium text-cocoa-900">{entry.value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </li>
             </ul>
           </div>
@@ -169,7 +226,13 @@ export function ContactPage() {
                 </p>
               ) : null}
 
-              <Button type="submit" size="lg" className="mt-6" loading={isSubmitting}>
+              <Button
+                type="submit"
+                variant="order"
+                size="lg"
+                className="mt-6"
+                loading={isSubmitting}
+              >
                 Send message
               </Button>
             </form>

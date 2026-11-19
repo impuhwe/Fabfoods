@@ -44,7 +44,6 @@ import {
   updateMenuItem,
   updateOrderPayment,
   updateOrderStatus,
-  updateReservationSelectionStatus,
   updateReservationStatus,
   updateStaff,
   verifyMenuItem,
@@ -64,7 +63,6 @@ import {
 } from '../validators/order.validator.js';
 import {
   adminReservationQuerySchema,
-  adminReservationSelectionStatusSchema,
   adminReservationStatusSchema,
 } from '../validators/reservation.validator.js';
 import { adminCateringQuerySchema } from '../validators/catering.validator.js';
@@ -151,14 +149,6 @@ router.patch(
   validate(rescheduleReservationSchema),
   rescheduleReservation,
 );
-router.patch(
-  '/reservations/:id/selection-status',
-  requirePermission(PERMISSIONS.RESERVATIONS_STATUS_UPDATE),
-  validateObjectId('id', 'reservation id'),
-  validate(adminReservationSelectionStatusSchema),
-  updateReservationSelectionStatus,
-);
-
 router.get(
   '/emails',
   requirePermission(PERMISSIONS.EMAILS_VIEW),

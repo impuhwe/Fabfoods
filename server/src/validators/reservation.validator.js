@@ -1,8 +1,5 @@
 ﻿import { z } from 'zod';
-import {
-  RESERVATION_SELECTION_STATUS_VALUES,
-  RESERVATION_STATUS_VALUES,
-} from '../config/constants.js';
+import { RESERVATION_STATUS_VALUES } from '../config/constants.js';
 
 const emailSchema = z.string().trim().toLowerCase().email('Enter a valid email address').max(254);
 
@@ -16,13 +13,6 @@ export const cancelReservationSchema = z
 export const adminReservationStatusSchema = z
   .object({
     status: z.enum(RESERVATION_STATUS_VALUES),
-    note: z.string().trim().max(300).default(''),
-  })
-  .strict();
-
-export const adminReservationSelectionStatusSchema = z
-  .object({
-    status: z.enum(RESERVATION_SELECTION_STATUS_VALUES),
     note: z.string().trim().max(300).default(''),
   })
   .strict();

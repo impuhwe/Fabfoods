@@ -74,16 +74,12 @@ test('admin updates the order status', async ({ page }) => {
 });
 
 test('admin approves a pending reservation', async ({ page }) => {
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(
-    new Date(),
-  );
   const guestEmail = `qa-stage3-res-${Date.now()}@example.com`;
 
   await page.goto('/reservations');
   await page.getByLabel('Full name').fill('QA Stage Three Guest');
   await page.getByLabel('Email').fill(guestEmail);
   await page.getByLabel('Phone').fill('+250 788 000 444');
-  await page.getByLabel('Date').fill(today);
   await page.getByLabel('Time').fill('19:30');
   await page.getByRole('button', { name: 'Send table request' }).click();
 
@@ -107,7 +103,11 @@ test('settings page exposes guarded business configuration', async ({ page }) =>
   await page.getByRole('link', { name: 'Settings', exact: true }).click();
 
   await expect(page.getByRole('heading', { name: 'Business settings', level: 2 })).toBeVisible();
-  await expect(page.getByText('Only approved information is shown on the public site.')).toBeVisible();
-  await expect(page.getByText('Requests always stay pending until staff approve them.')).toBeVisible();
+  await expect(
+    page.getByText('Only approved information is shown on the public site.'),
+  ).toBeVisible();
+  await expect(
+    page.getByText('Requests always stay pending until staff approve them.'),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save settings' }).first()).toBeVisible();
 });

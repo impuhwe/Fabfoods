@@ -31,6 +31,39 @@ describe('Button', () => {
     expect(link).toHaveAttribute('href', '/menu');
     expect(link.className).toContain('rounded-full');
   });
+
+  it('uses white text for the ordering variant without changing the background classes', () => {
+    render(<Button variant="order">Order now</Button>);
+
+    const button = screen.getByRole('button', { name: 'Order now' });
+    expect(button.className).toContain('text-white');
+    expect(button.className).toContain('bg-ember-500');
+    expect(button.className).not.toContain('text-cocoa-950');
+  });
+
+  it('keeps every other order variant class identical to the primary variant', () => {
+    render(
+      <>
+        <Button>Primary action</Button>
+        <Button variant="order">Order action</Button>
+      </>,
+    );
+
+    const primary = screen.getByRole('button', { name: 'Primary action' });
+    const order = screen.getByRole('button', { name: 'Order action' });
+    expect(primary.className).toContain('text-cocoa-950');
+    const ignoringTextColor = (element, colorClass) =>
+      element.className.split(' ').filter((name) => name !== colorClass);
+
+    expect(ignoringTextColor(order, 'text-white')).toEqual(
+      ignoringTextColor(primary, 'text-cocoa-950'),
+    );
+    expect(
+      order.className
+        .split(' ')
+        .filter((name) => /^(hover|focus|active|disabled):text-/.test(name)),
+    ).toEqual([]);
+  });
 });
 
 describe('Field', () => {

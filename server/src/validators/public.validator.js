@@ -88,8 +88,6 @@ export const reservationSchema = z
       .max(20, 'Use the contact form for parties over 20'),
     occasion: z.string().trim().max(80).default(''),
     specialRequests: z.string().trim().max(600).default(''),
-    preparationNotes: z.string().trim().max(500).default(''),
-    menuSelections: z.array(quoteLineSchema).max(50).default([]),
   })
   .strict();
 

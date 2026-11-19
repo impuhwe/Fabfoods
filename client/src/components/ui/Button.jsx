@@ -5,6 +5,8 @@ import { cn } from '../../lib/cn.js';
 const VARIANTS = {
   primary:
     'bg-ember-500 text-cocoa-950 shadow-soft hover:bg-ember-400 active:bg-ember-600 disabled:hover:bg-ember-500',
+  order:
+    'bg-ember-500 text-white shadow-soft hover:bg-ember-400 active:bg-ember-600 disabled:hover:bg-ember-500',
   secondary:
     'border border-cocoa-900/20 bg-transparent text-cocoa-900 hover:bg-cream-200 active:bg-cream-300',
   ghost: 'bg-transparent text-cocoa-900 hover:bg-cream-200 active:bg-cream-300',

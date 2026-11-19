@@ -207,7 +207,7 @@ export function MenuItemPage() {
           title="Dish not found"
           description={error || 'This item may have been removed from the menu.'}
           action={
-            <Button asChild>
+            <Button asChild variant="order">
               <Link to="/menu">Back to the menu</Link>
             </Button>
           }
@@ -390,6 +390,7 @@ export function MenuItemPage() {
               <QuantityStepper value={quantity} onChange={setQuantity} label={item.name} max={20} />
               <Button
                 size="lg"
+                variant="order"
                 onClick={addToOrder}
                 disabled={!item.isOrderable}
                 className="flex-1 sm:flex-none"

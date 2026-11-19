@@ -12,7 +12,7 @@ import User from '../models/User.js';
 import { createAdminInvitationToken, hashAdminInvitationToken } from '../security/tokens.js';
 import { isEmailConfigured, sendEmail } from '../emails/brevo.provider.js';
 import { renderEmailTemplate } from '../emails/templates.js';
-import { badRequest, conflict, forbidden, notFound } from '../utils/errors.js';
+import { badRequest, conflict, forbidden, notFound, serviceUnavailable } from '../utils/errors.js';
 import { toPublicUser } from '../utils/user.js';
 import { recordAudit } from './audit.service.js';
 
@@ -102,6 +102,10 @@ export async function createInvitation(input, actor, req) {
     throw forbidden('Only administrators can invite other administrators');
   }
 
+  if (!isEmailConfigured()) {
+    throw serviceUnavailable('Invitation email delivery is not configured');
+  }
+
   if (await User.exists({ email: input.email })) {
     throw conflict('An account with that email already exists', 'EMAIL_IN_USE');
   }
@@ -126,7 +130,7 @@ export async function createInvitation(input, actor, req) {
       name: input.name,
       email: input.email,
       phone: input.phone || null,
-      role: ROLES.ADMIN,
+      role: ROLES.CUSTOMER,
       status: USER_STATUS.SUSPENDED,
       passwordHash: placeholderPasswordHash,
       mustChangePassword: true,
@@ -155,26 +159,36 @@ export async function createInvitation(input, actor, req) {
   let emailSent = false;
   let emailError = '';
 
-  if (isEmailConfigured()) {
-    try {
-      const rendered = renderEmailTemplate('admin_invitation', {
-        name: input.name,
-        inviterName: actor.name,
-        inviteUrl: url,
-        expiresAt: expiresAtLabel,
-      });
-      await sendEmail({
-        to: input.email,
-        subject: rendered.subject,
-        html: rendered.html,
-        text: rendered.text,
-      });
-      emailSent = true;
-      invitation.emailSentAt = new Date();
-    } catch (error) {
-      emailError = error.message.slice(0, 500);
-      invitation.emailError = emailError;
-    }
+  try {
+    const rendered = renderEmailTemplate('admin_invitation', {
+      name: input.name,
+      inviterName: actor.name,
+      inviteUrl: url,
+      expiresAt: expiresAtLabel,
+    });
+    const message = await sendEmail({
+      to: input.email,
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+    });
+    emailSent = true;
+    invitation.emailSentAt = new Date();
+    invitation.emailError = '';
+    await invitation.save();
+    await recordAudit(req, {
+      action: 'admin_invitation.send',
+      targetType: 'adminInvitation',
+      targetId: invitation._id,
+      summary: `Administrator invitation email sent to ${invitation.email}`,
+      metadata: {
+        email: invitation.email,
+        messageId: message?.messageId ?? null,
+      },
+    });
+  } catch (error) {
+    emailError = error.message.slice(0, 500);
+    invitation.emailError = emailError;
     await invitation.save();
   }
 
@@ -193,7 +207,6 @@ export async function createInvitation(input, actor, req) {
 
   return {
     invitation: invitation.toJSON(),
-    inviteUrl: emailSent ? undefined : url,
     emailSent,
     emailError,
   };
@@ -262,6 +275,7 @@ export async function acceptInvitation(input, req) {
   }
 
   const previousPasswordHash = placeholder.passwordHash;
+  const previousRole = placeholder.role;
   const passwordHash = await bcrypt.hash(input.password, env.BCRYPT_ROUNDS);
   const user = await User.findOneAndUpdate(
     {
@@ -271,6 +285,7 @@ export async function acceptInvitation(input, req) {
     },
     {
       $set: {
+        role: ROLES.ADMIN,
         status: USER_STATUS.ACTIVE,
         passwordHash,
         mustChangePassword: false,
@@ -297,6 +312,7 @@ export async function acceptInvitation(input, req) {
       { _id: user._id },
       {
         $set: {
+          role: previousRole,
           status: USER_STATUS.SUSPENDED,
           passwordHash: previousPasswordHash,
           mustChangePassword: true,

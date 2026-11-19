@@ -1,9 +1,25 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import BrandLogo from './BrandLogo.jsx';
-import { NAV_LINKS, SITE } from '../../lib/site.js';
+import { resolveContactDetails, NAV_LINKS, SITE } from '../../lib/site.js';
+import { getPublicSettings } from '../../services/publicApi.js';
 
 export function Footer() {
+  const [contact, setContact] = useState(() => resolveContactDetails(null));
+
+  useEffect(() => {
+    let active = true;
+    getPublicSettings()
+      .then((settings) => {
+        if (active) setContact(resolveContactDetails(settings));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <footer className="mt-20 bg-cocoa-950 text-cream-50">
       <div className="mx-auto max-w-[1240px] px-5 py-14 sm:px-8 lg:px-12 lg:py-20">
@@ -83,10 +99,28 @@ export function Footer() {
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cream-100/65">
               Visit
             </p>
-            <p className="mt-4 text-sm text-cream-100/75">{SITE.city}</p>
-            <p className="mt-2 text-xs leading-relaxed text-cream-100/65">
-              Address, phone, email and opening hours are being confirmed. They will be published
-              only after owner approval.
+            <a
+              href={contact.directionsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 block text-sm text-cream-100/75 hover:text-cream-50"
+            >
+              {contact.address}
+            </a>
+            <a
+              href={contact.phoneHref}
+              className="mt-2 block text-sm text-cream-100/75 hover:text-cream-50"
+            >
+              {contact.phone}
+            </a>
+            <a
+              href={contact.emailHref}
+              className="mt-1 block text-sm text-cream-100/75 hover:text-cream-50"
+            >
+              {contact.email}
+            </a>
+            <p className="mt-3 text-xs leading-relaxed text-cream-100/65">
+              {contact.hoursSummary}
             </p>
             <Link
               to="/contact"

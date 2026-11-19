@@ -156,9 +156,7 @@ export function AccountPage() {
     try {
       const updated = await cancelReservation(reference);
       setReservations((current) =>
-        current.map((reservation) =>
-          reservation.reference === reference ? updated : reservation,
-        ),
+        current.map((reservation) => (reservation.reference === reference ? updated : reservation)),
       );
       addToast({ title: 'Table request cancelled', variant: 'success' });
     } catch (cancelError) {
@@ -242,6 +240,7 @@ export function AccountPage() {
             ) : null}
             <Button
               type="submit"
+              variant="order"
               className="mt-4 w-full"
               loading={profileForm.formState.isSubmitting}
             >
@@ -336,7 +335,7 @@ export function AccountPage() {
                 title="No orders yet"
                 description="Your online orders will appear here after checkout."
                 action={
-                  <Button asChild>
+                  <Button asChild variant="order">
                     <Link to="/menu">Explore the menu</Link>
                   </Button>
                 }
@@ -384,9 +383,7 @@ export function AccountPage() {
 
           <div>
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-2xl font-semibold text-cocoa-950">
-                Table requests
-              </h2>
+              <h2 className="font-display text-2xl font-semibold text-cocoa-950">Table requests</h2>
               <Button asChild size="sm" variant="secondary">
                 <Link to="/reservations">New request</Link>
               </Button>
@@ -403,7 +400,7 @@ export function AccountPage() {
                 title="No table requests yet"
                 description="When you request a table while signed in, it will appear here."
                 action={
-                  <Button asChild>
+                  <Button asChild variant="order">
                     <Link to="/reservations">Request a table</Link>
                   </Button>
                 }
@@ -430,10 +427,7 @@ export function AccountPage() {
                               : ''}
                           </p>
                         </div>
-                        <Badge
-                          variant={RESERVATION_VARIANT[reservation.status] ?? 'neutral'}
-                          dot
-                        >
+                        <Badge variant={RESERVATION_VARIANT[reservation.status] ?? 'neutral'} dot>
                           {reservation.statusLabel}
                         </Badge>
                       </div>

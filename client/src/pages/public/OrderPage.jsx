@@ -192,7 +192,7 @@ export function OrderPage() {
               {error}
             </p>
           ) : null}
-          <Button type="submit" loading={loading}>
+          <Button type="submit" variant="order" loading={loading}>
             Find order
           </Button>
           {user ? (
@@ -314,7 +314,12 @@ export function OrderPage() {
               {PAYMENT_LABELS[order.paymentStatus] ?? order.paymentStatus}
             </p>
             {needsPayment ? (
-              <Button className="mt-4 w-full" onClick={handleVerify} loading={busy === 'verify'}>
+              <Button
+                variant="order"
+                className="mt-4 w-full"
+                onClick={handleVerify}
+                loading={busy === 'verify'}
+              >
                 Check payment status
               </Button>
             ) : null}

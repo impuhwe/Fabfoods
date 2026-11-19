@@ -17,7 +17,7 @@ export function Forbidden() {
         administrator.
       </p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Button asChild>
+        <Button asChild variant="order">
           <Link to="/">Back to site</Link>
         </Button>
         <Button variant="secondary" asChild>

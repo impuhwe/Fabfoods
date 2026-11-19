@@ -12,7 +12,7 @@ export async function sendEmail({ to, subject, html, text }) {
 
   let response;
   try {
-    response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    response = await fetch(env.BREVO_API_URL, {
       method: 'POST',
       headers: {
         'api-key': env.BREVO_API_KEY,

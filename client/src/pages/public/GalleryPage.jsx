@@ -33,7 +33,7 @@ export function GalleryPage() {
                 being prepared. These images are not photographs of the restaurant.
               </p>
             </div>
-            <Button asChild>
+            <Button asChild variant="order">
               <Link to="/reservations">
                 Request a table
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />

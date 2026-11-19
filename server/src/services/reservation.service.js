@@ -2,7 +2,6 @@
 import { RESERVATION_SELECTION_STATUSES, RESERVATION_STATUSES } from '../config/constants.js';
 import Reservation from '../models/Reservation.js';
 import { enqueueEmail } from './email.service.js';
-import { resolveMenuSelectionLines } from './menuSelectionQuote.service.js';
 import { getSettings } from './settings.service.js';
 import { badRequest, conflict, notFound } from '../utils/errors.js';
 
@@ -74,16 +73,6 @@ const ALLOWED_TRANSITIONS = {
   [RESERVATION_STATUSES.NO_SHOW]: [],
 };
 
-const ALLOWED_SELECTION_TRANSITIONS = {
-  [RESERVATION_SELECTION_STATUSES.NOT_REQUESTED]: [],
-  [RESERVATION_SELECTION_STATUSES.PENDING_REVIEW]: [
-    RESERVATION_SELECTION_STATUSES.CONFIRMED,
-    RESERVATION_SELECTION_STATUSES.DECLINED,
-  ],
-  [RESERVATION_SELECTION_STATUSES.CONFIRMED]: [],
-  [RESERVATION_SELECTION_STATUSES.DECLINED]: [],
-};
-
 function toSelectionLine(line) {
   return {
     slug: line.slug,
@@ -122,12 +111,35 @@ function toSelectionEstimate(estimate) {
   };
 }
 
-function toPublicReservation(reservation) {
-  const statusCopy = STATUS_COPY[reservation.status] ?? STATUS_COPY[RESERVATION_STATUSES.PENDING];
+function toLegacySelectionFields(reservation) {
   const selectionStatus =
     reservation.selectionStatus ?? RESERVATION_SELECTION_STATUSES.NOT_REQUESTED;
   const selectionCopy =
     SELECTION_STATUS_COPY[selectionStatus] ?? SELECTION_STATUS_COPY.NOT_REQUESTED;
+
+  return {
+    preparationNotes: reservation.preparationNotes ?? '',
+    menuSelections: (reservation.menuSelections ?? []).map(toSelectionLine),
+    selectionEstimate: toSelectionEstimate(reservation.selectionEstimate),
+    selectionStatus,
+    selectionStatusLabel: selectionCopy.label,
+    selectionStatusMessage: selectionCopy.message,
+    selectionReviewNote: reservation.selectionReviewNote ?? '',
+    selectionReviewedBy: reservation.selectionReviewedBy
+      ? String(reservation.selectionReviewedBy)
+      : null,
+    selectionReviewedAt: reservation.selectionReviewedAt ?? null,
+    selectionStatusHistory: (reservation.selectionStatusHistory ?? []).map((event) => ({
+      status: event.status,
+      note: event.note ?? '',
+      changedAt: event.changedAt,
+      changedBy: event.changedBy ? String(event.changedBy) : null,
+    })),
+  };
+}
+
+function toPublicReservation(reservation) {
+  const statusCopy = STATUS_COPY[reservation.status] ?? STATUS_COPY[RESERVATION_STATUSES.PENDING];
 
   return {
     id: String(reservation._id ?? reservation.id),
@@ -140,12 +152,6 @@ function toPublicReservation(reservation) {
     partySize: reservation.partySize,
     occasion: reservation.occasion ?? '',
     specialRequests: reservation.specialRequests ?? '',
-    preparationNotes: reservation.preparationNotes ?? '',
-    menuSelections: (reservation.menuSelections ?? []).map(toSelectionLine),
-    selectionEstimate: toSelectionEstimate(reservation.selectionEstimate),
-    selectionStatus,
-    selectionStatusLabel: selectionCopy.label,
-    selectionStatusMessage: selectionCopy.message,
     status: reservation.status,
     statusLabel: statusCopy.label,
     statusMessage: statusCopy.message,
@@ -156,19 +162,9 @@ function toPublicReservation(reservation) {
 function toAdminReservation(reservation) {
   return {
     ...toPublicReservation(reservation),
+    ...toLegacySelectionFields(reservation),
     user: reservation.user ? String(reservation.user) : null,
     source: reservation.source,
-    selectionReviewNote: reservation.selectionReviewNote ?? '',
-    selectionReviewedBy: reservation.selectionReviewedBy
-      ? String(reservation.selectionReviewedBy)
-      : null,
-    selectionReviewedAt: reservation.selectionReviewedAt ?? null,
-    selectionStatusHistory: (reservation.selectionStatusHistory ?? []).map((event) => ({
-      status: event.status,
-      note: event.note ?? '',
-      changedAt: event.changedAt,
-      changedBy: event.changedBy ? String(event.changedBy) : null,
-    })),
     statusHistory: (reservation.statusHistory ?? []).map((event) => ({
       status: event.status,
       note: event.note ?? '',
@@ -181,10 +177,6 @@ function toAdminReservation(reservation) {
 
 function addHistory(reservation, status, note, changedBy = null) {
   reservation.statusHistory.push({ status, note, changedBy, changedAt: new Date() });
-}
-
-function addSelectionHistory(reservation, status, note, changedBy = null) {
-  reservation.selectionStatusHistory.push({ status, note, changedBy, changedAt: new Date() });
 }
 
 function assertCanView(reservation, actor = {}) {
@@ -216,25 +208,6 @@ export async function createReservation(payload, user = null) {
     throw badRequest(`Choose a date within the next ${settings.reservations.maxDaysAhead} days`);
   }
 
-  const menuSelections = payload.menuSelections ?? [];
-  const pricedLines = menuSelections.length
-    ? await resolveMenuSelectionLines(menuSelections, 'reservation')
-    : [];
-  const subtotal = pricedLines.reduce((total, line) => total + line.lineTotal, 0);
-  const itemCount = pricedLines.reduce((total, line) => total + line.quantity, 0);
-  const selectionEstimate = pricedLines.length
-    ? {
-        currency: settings.payments.currency,
-        itemCount,
-        subtotal,
-        total: subtotal,
-        calculatedAt: new Date(),
-      }
-    : null;
-  const selectionStatus = pricedLines.length
-    ? RESERVATION_SELECTION_STATUSES.PENDING_REVIEW
-    : RESERVATION_SELECTION_STATUSES.NOT_REQUESTED;
-
   const startAt = new Date(`${payload.date}T${payload.time}:00+02:00`);
 
   for (let attempt = 0; attempt < 6; attempt += 1) {
@@ -248,19 +221,6 @@ export async function createReservation(payload, user = null) {
         partySize: payload.partySize,
         occasion: payload.occasion ?? '',
         specialRequests: payload.specialRequests ?? '',
-        preparationNotes: payload.preparationNotes ?? '',
-        menuSelections: pricedLines,
-        selectionEstimate,
-        selectionStatus,
-        selectionStatusHistory: pricedLines.length
-          ? [
-              {
-                status: RESERVATION_SELECTION_STATUSES.PENDING_REVIEW,
-                note: 'Food and drink pre-selection submitted with the table request',
-                changedAt: new Date(),
-              },
-            ]
-          : [],
         reference: referenceFor(payload.date),
         startAt,
         user: user?.id ?? null,
@@ -436,31 +396,6 @@ export async function updateReservationStatus(id, status, note, adminId) {
       reservation: reservation._id,
     });
   }
-
-  return toAdminReservation(reservation);
-}
-
-export async function updateReservationSelectionStatus(id, status, note, adminId) {
-  const reservation = await Reservation.findById(id);
-  if (!reservation) throw notFound('Reservation not found');
-  if (!reservation.menuSelections?.length) {
-    throw badRequest('This reservation has no food or drink selections to review');
-  }
-
-  const current = reservation.selectionStatus ?? RESERVATION_SELECTION_STATUSES.PENDING_REVIEW;
-  if (!ALLOWED_SELECTION_TRANSITIONS[current]?.includes(status)) {
-    throw conflict(
-      `Food selection cannot move from ${current} to ${status}`,
-      'INVALID_SELECTION_STATUS_TRANSITION',
-    );
-  }
-
-  reservation.selectionStatus = status;
-  reservation.selectionReviewNote = note ?? '';
-  reservation.selectionReviewedBy = adminId ?? null;
-  reservation.selectionReviewedAt = new Date();
-  addSelectionHistory(reservation, status, note, adminId);
-  await reservation.save();
 
   return toAdminReservation(reservation);
 }

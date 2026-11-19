@@ -13,25 +13,18 @@ import {
   ListChecks,
   Users,
 } from 'lucide-react';
-import ReservationMenuPicker from '../../components/public/ReservationMenuPicker.jsx';
-import ReservationSelectionSummary from '../../components/public/ReservationSelectionSummary.jsx';
 import Button from '../../components/ui/Button.jsx';
+import DatePicker from '../../components/ui/DatePicker.jsx';
 import Field from '../../components/ui/Field.jsx';
 import Input, { inputClasses } from '../../components/ui/Input.jsx';
 import usePageMeta from '../../hooks/usePageMeta.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { getApiErrorMessage } from '../../lib/api.js';
-import { formatRwf } from '../../lib/format.js';
-import { toReservationSelectionPayload } from '../../lib/reservationMenu.js';
+import { getKigaliDateBounds } from '../../lib/calendarDate.js';
 import { OCCASIONS } from '../../lib/site.js';
 import { HIGH_PRIORITY_IMAGE_PROPS, RESERVATION_IMAGE } from '../../lib/imagery.js';
 import { reservationFormSchema } from '../../lib/validation.js';
 import { requestReservation } from '../../services/publicApi.js';
-
-const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(new Date());
-const latest = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Kigali' }).format(
-  new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-);
 
 const OCCASION_ICONS = {
   Birthday: Cake,
@@ -45,7 +38,7 @@ export function ReservationsPage() {
   const { user } = useAuth();
   const [reservation, setReservation] = useState(null);
   const [submitError, setSubmitError] = useState('');
-  const [menuSelections, setMenuSelections] = useState([]);
+  const { min: minDate, max: maxDate } = getKigaliDateBounds();
   const {
     register,
     control,
@@ -60,16 +53,16 @@ export function ReservationsPage() {
       name: '',
       email: '',
       phone: '',
-      date: today,
+      date: minDate,
       time: '19:00',
       partySize: 2,
       occasion: '',
       specialRequests: '',
-      preparationNotes: '',
     },
   });
   const currentValues = watch();
 
+  const { field: dateField } = useController({ control, name: 'date' });
   const { field: occasionField } = useController({ control, name: 'occasion' });
 
   usePageMeta({
@@ -90,41 +83,10 @@ export function ReservationsPage() {
     }
   }, [user, reset, getValues]);
 
-  function addMenuSelection(line) {
-    setMenuSelections((current) => {
-      const existing = current.find((entry) => entry.key === line.key);
-      if (!existing) return [...current, line];
-      return current.map((entry) =>
-        entry.key === line.key
-          ? {
-              ...entry,
-              quantity: Math.min(20, entry.quantity + line.quantity),
-              lineTotal: entry.unitPrice * Math.min(20, entry.quantity + line.quantity),
-            }
-          : entry,
-      );
-    });
-  }
-
-  function changeMenuQuantity(key, quantity) {
-    setMenuSelections((current) =>
-      current.map((line) =>
-        line.key === key ? { ...line, quantity, lineTotal: line.unitPrice * quantity } : line,
-      ),
-    );
-  }
-
-  function removeMenuSelection(key) {
-    setMenuSelections((current) => current.filter((line) => line.key !== key));
-  }
-
   async function onSubmit(formValues) {
     setSubmitError('');
     try {
-      const data = await requestReservation({
-        ...formValues,
-        menuSelections: menuSelections.map(toReservationSelectionPayload),
-      });
+      const data = await requestReservation(formValues);
       setReservation(data.reservation);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
@@ -183,55 +145,15 @@ export function ReservationsPage() {
             </div>
           </dl>
 
-          <div className="mt-5 rounded-xl border border-cocoa-900/10 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cocoa-500">
-                Food & drink pre-selection
-              </p>
-              <span className="text-sm font-semibold text-cocoa-900">
-                {reservation.selectionStatusLabel}
-              </span>
-            </div>
-            {reservation.menuSelections?.length ? (
-              <ul className="mt-3 space-y-2 text-sm text-cocoa-700">
-                {reservation.menuSelections.map((line) => (
-                  <li key={`${line.slug}-${line.selectionSummary.join('-')}`}>
-                    <span className="font-semibold">{line.name}</span> × {line.quantity}
-                    {line.selectionSummary?.length ? (
-                      <span className="text-cocoa-500"> · {line.selectionSummary.join(', ')}</span>
-                    ) : null}
-                    <span className="float-right tabular-nums">{formatRwf(line.lineTotal)}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-cocoa-600">No food or drinks were selected.</p>
-            )}
-            {reservation.selectionEstimate ? (
-              <p className="mt-3 border-t border-cocoa-900/10 pt-3 text-sm font-semibold text-cocoa-900">
-                Estimated total: {formatRwf(reservation.selectionEstimate.total)}
-              </p>
-            ) : null}
-            {reservation.preparationNotes ? (
-              <p className="mt-3 rounded-lg bg-cream-50 p-3 text-xs text-cocoa-600">
-                Preparation notes: {reservation.preparationNotes}
-              </p>
-            ) : null}
-            <p className="mt-3 text-xs text-cocoa-500">
-              This is not a food order. The restaurant reviews selections separately.
-            </p>
-          </div>
-
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button asChild>
+            <Button asChild variant="order">
               <Link to="/menu">Browse the menu</Link>
             </Button>
             <Button
               variant="secondary"
               onClick={() => {
                 setReservation(null);
-                setMenuSelections([]);
-                reset({ ...getValues(), specialRequests: '', preparationNotes: '' });
+                reset({ ...getValues(), specialRequests: '' });
               }}
             >
               Make another request
@@ -290,7 +212,17 @@ export function ReservationsPage() {
               <Input type="number" min={1} max={20} {...register('partySize')} />
             </Field>
             <Field label="Date" required error={errors.date?.message}>
-              <Input type="date" min={today} max={latest} {...register('date')} />
+              <DatePicker
+                value={dateField.value}
+                onChange={dateField.onChange}
+                onBlur={dateField.onBlur}
+                ref={dateField.ref}
+                name={dateField.name}
+                min={minDate}
+                max={maxDate}
+                placeholder="Pick a date"
+                invalid={Boolean(errors.date)}
+              />
             </Field>
             <Field
               label="Time"
@@ -370,18 +302,6 @@ export function ReservationsPage() {
             >
               <textarea rows={4} className={inputClasses} {...register('specialRequests')} />
             </Field>
-            <Field
-              label="Preparation or dietary notes"
-              error={errors.preparationNotes?.message}
-              hint="Optional notes for selected food and drinks, such as allergies or spice level."
-              className="sm:col-span-2"
-            >
-              <textarea rows={3} className={inputClasses} {...register('preparationNotes')} />
-            </Field>
-          </div>
-
-          <div className="mt-8">
-            <ReservationMenuPicker selections={menuSelections} onAdd={addMenuSelection} />
           </div>
 
           <div className="mt-6 rounded-2xl border border-cocoa-900/10 bg-cream-50 p-5">
@@ -427,24 +347,6 @@ export function ReservationsPage() {
                 Special requests: {currentValues.specialRequests}
               </p>
             ) : null}
-            {currentValues.preparationNotes ? (
-              <p className="mt-2 rounded-lg bg-white p-3 text-xs text-cocoa-600">
-                Preparation notes: {currentValues.preparationNotes}
-              </p>
-            ) : null}
-            <div className="mt-4">
-              <ReservationSelectionSummary
-                selections={menuSelections}
-                onQuantityChange={changeMenuQuantity}
-                onRemove={removeMenuSelection}
-                compact
-              />
-              {!menuSelections.length ? (
-                <p className="rounded-lg bg-white p-3 text-sm text-cocoa-600">
-                  No food or drinks selected — you can still send this request.
-                </p>
-              ) : null}
-            </div>
           </div>
 
           {submitError ? (
@@ -457,7 +359,7 @@ export function ReservationsPage() {
           ) : null}
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Button type="submit" size="lg" loading={isSubmitting}>
+            <Button type="submit" variant="order" size="lg" loading={isSubmitting}>
               <CalendarCheck className="h-4 w-4" aria-hidden="true" />
               Send table request
             </Button>

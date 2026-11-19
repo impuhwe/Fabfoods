@@ -1,5 +1,16 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import bcrypt from 'bcrypt';
+
+const { sendEmailMock } = vi.hoisted(() => ({
+  sendEmailMock: vi.fn(async () => ({ messageId: 'qa-invitation-message' })),
+}));
+
+vi.mock('../src/emails/brevo.provider.js', () => ({
+  isEmailConfigured: () => true,
+  sendEmail: sendEmailMock,
+  default: sendEmailMock,
+}));
+
 import AdminInvitation from '../src/models/AdminInvitation.js';
 import CateringRequest from '../src/models/CateringRequest.js';
 import User from '../src/models/User.js';
@@ -22,9 +33,23 @@ function invitationPayload(email) {
   return { name: 'Invited Admin', email, phone: '+250788000001' };
 }
 
+function inviteUrlFromEmail(email) {
+  const call = [...sendEmailMock.mock.calls]
+    .reverse()
+    .find(([message]) => message.to === email);
+  const text = call?.[0]?.text ?? '';
+  const match = text.match(/Accept at (https?:\/\/\S+)/);
+  if (!match) throw new Error(`No invitation link captured for ${email}`);
+  return match[1].replace(/\.$/, '');
+}
+
 function tokenFromInviteUrl(inviteUrl) {
   const url = new URL(inviteUrl);
   return new URLSearchParams(url.hash.slice(1)).get('invitation');
+}
+
+function tokenFromEmail(email) {
+  return tokenFromInviteUrl(inviteUrlFromEmail(email));
 }
 
 function cateringPayload(overrides = {}) {
@@ -73,6 +98,10 @@ beforeAll(async () => {
   const admin = await loginUser('phase-one-admin@example.com', PASSWORD);
   expect(admin.response.status).toBe(200);
   tokens.admin = admin.tokens;
+});
+
+beforeEach(() => {
+  sendEmailMock.mockClear();
 });
 
 afterAll(async () => {
@@ -137,20 +166,63 @@ describe('administrator invitations', () => {
     ).expect(201);
 
     const result = response.body.data;
-    expect(result.emailSent).toBe(false);
-    expect(result.inviteUrl).toMatch(/\/admin\/accept-invitation#invitation=/);
+    const token = tokenFromEmail(email);
+    expect(result.emailSent).toBe(true);
+    expect(result.emailError).toBe('');
+    expect(result.inviteUrl).toBeUndefined();
     expect(result.invitation.tokenHash).toBeUndefined();
+    expect(JSON.stringify(response.body)).not.toContain(token);
+    expect(sendEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: email,
+        text: expect.stringContaining('/admin/accept-invitation#invitation='),
+      }),
+    );
 
     const invitation = await AdminInvitation.findOne({ email });
     expect(invitation.status).toBe('pending');
-    expect(invitation.tokenHash).not.toBe(tokenFromInviteUrl(result.inviteUrl));
+    expect(invitation.emailSentAt).toBeInstanceOf(Date);
+    expect(invitation.tokenHash).not.toBe(token);
+
+    const listing = await getWithAuth('/admin/invitations', tokens.admin).expect(200);
+    expect(JSON.stringify(listing.body)).not.toContain(token);
 
     const placeholder = await User.findOne({ email });
     expect(placeholder).toMatchObject({
-      role: ROLES.ADMIN,
+      role: ROLES.CUSTOMER,
       status: USER_STATUS.SUSPENDED,
       mustChangePassword: true,
     });
+  });
+
+  it('records a distinct audit event only when the invitation email is sent', async () => {
+    const email = 'audit-send-admin@example.com';
+    await postWithCsrf('/admin/invitations', invitationPayload(email), tokens.admin).expect(201);
+
+    const audit = await getWithAuth('/admin/audit-logs', tokens.admin).expect(200);
+    const sendEvent = audit.body.data.logs.find(
+      (entry) => entry.action === 'admin_invitation.send',
+    );
+    expect(sendEvent).toBeTruthy();
+    expect(sendEvent.metadata).toMatchObject({
+      email,
+      messageId: 'qa-invitation-message',
+    });
+    expect(JSON.stringify(sendEvent)).not.toContain(tokenFromEmail(email));
+  });
+
+  it('rejects duplicate pending invitations', async () => {
+    const email = 'duplicate-admin@example.com';
+    await postWithCsrf('/admin/invitations', invitationPayload(email), tokens.admin).expect(201);
+
+    const duplicate = await postWithCsrf(
+      '/admin/invitations',
+      invitationPayload(email),
+      tokens.admin,
+    ).expect(409);
+    expect(duplicate.body.error.code).toBe('INVITATION_PENDING');
+    expect(await AdminInvitation.countDocuments({ email })).toBe(1);
+    expect(sendEmailMock).toHaveBeenCalledTimes(1);
   });
 
   it('lets the invitee activate an administrator account and rejects token reuse', async () => {
@@ -160,7 +232,7 @@ describe('administrator invitations', () => {
       invitationPayload(email),
       tokens.admin,
     ).expect(201);
-    const token = tokenFromInviteUrl(created.body.data.inviteUrl);
+    const token = tokenFromEmail(email);
 
     const accepted = await postWithCsrf(
       '/invitations/accept',
@@ -189,7 +261,7 @@ describe('administrator invitations', () => {
       invitationPayload(email),
       tokens.admin,
     ).expect(201);
-    const token = tokenFromInviteUrl(created.body.data.inviteUrl);
+    const token = tokenFromEmail(email);
     const invitationId = created.body.data.invitation.id;
 
     await postWithCsrf(
@@ -214,7 +286,7 @@ describe('administrator invitations', () => {
       invitationPayload(email),
       tokens.admin,
     ).expect(201);
-    const token = tokenFromInviteUrl(created.body.data.inviteUrl);
+    const token = tokenFromEmail(email);
 
     await AdminInvitation.updateOne(
       { _id: created.body.data.invitation.id },
@@ -232,6 +304,7 @@ describe('administrator invitations', () => {
     const audit = await getWithAuth('/admin/audit-logs', tokens.admin).expect(200);
     for (const action of [
       'admin_invitation.create',
+      'admin_invitation.send',
       'admin_invitation.accept',
       'admin_invitation.revoke',
       'admin_invitation.expire',

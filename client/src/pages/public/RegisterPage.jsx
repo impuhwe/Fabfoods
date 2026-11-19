@@ -87,7 +87,7 @@ export function RegisterPage() {
             {submitError}
           </p>
         ) : null}
-        <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
+        <Button type="submit" variant="order" size="lg" className="w-full" loading={isSubmitting}>
           Create account
         </Button>
       </form>

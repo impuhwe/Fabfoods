@@ -47,7 +47,7 @@ export function AboutPage() {
               generous menu, a proper cup of coffee and a room that gives you space to settle in.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild>
+              <Button asChild variant="order">
                 <Link to="/menu">
                   See the menu
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
