@@ -65,14 +65,13 @@ export function AdminLogin() {
         </Link>
         <div className="relative">
           <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-cream-100/50">
-            Staff workspace
+            FAB FOODS staff
           </p>
           <p className="mt-6 max-w-sm font-display text-4xl font-semibold leading-tight">
-            Feed your brain. Run the room.
+            Manage orders, tables and the menu.
           </p>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-cream-100/60">
-            One secure place for the team to manage the restaurant. Staff accounts are created by an
-            administrator, never through public sign-up.
+            Staff accounts are created by an administrator. There is no public sign-up.
           </p>
         </div>
         <p className="relative text-xs text-cream-100/40">FAB FOODS · Kigali</p>
@@ -97,7 +96,7 @@ export function AdminLogin() {
               Staff sign in
             </h1>
             <p className="mt-2 text-sm text-cocoa-600">
-              Use the account provided by your administrator.
+              Sign in with your staff account.
             </p>
 
             {error ? (
@@ -138,8 +137,7 @@ export function AdminLogin() {
             </form>
 
             <p className="mt-6 text-xs leading-relaxed text-cocoa-500">
-              Access is limited to staff accounts. If you need access, contact the restaurant
-              administrator.
+              Staff access only. Contact your administrator for an account.
             </p>
           </div>
         </div>

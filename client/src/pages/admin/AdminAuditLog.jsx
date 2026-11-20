@@ -45,7 +45,7 @@ export function AdminAuditLog() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="font-display text-2xl font-semibold text-cocoa-950">Audit log</h2>
-          <CardDescription>Sensitive administrative operations are recorded here.</CardDescription>
+          <CardDescription>Administrative actions are logged here.</CardDescription>
         </div>
         <Button variant="secondary" onClick={load} disabled={loading}>
           <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />

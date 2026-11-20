@@ -47,8 +47,7 @@ export function AdminCatering() {
         <div>
           <h2 className="font-display text-2xl font-semibold text-cocoa-950">Catering requests</h2>
           <CardDescription>
-            Guest enquiries submitted without an account. Contact details are visible only to
-            authorized staff.
+            Guest catering enquiries. Contact details are visible to staff only.
           </CardDescription>
         </div>
         <Button variant="secondary" onClick={load} disabled={loading}>

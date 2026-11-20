@@ -148,7 +148,7 @@ export function AdminOrders() {
         <div>
           <h2 className="font-display text-2xl font-semibold text-cocoa-950">Orders</h2>
           <p className="mt-1 text-sm text-cocoa-600">
-            Review incoming orders, move them through the kitchen and record offline payments.
+            Review new orders, update status and record offline payments.
           </p>
         </div>
         <div className="flex items-end gap-2">

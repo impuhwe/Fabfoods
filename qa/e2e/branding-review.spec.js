@@ -27,7 +27,9 @@ test.describe('FAB FOODS branding and menu review', () => {
     await expect(
       page.getByText(/Opening hours, address, phone and social accounts are not published/i),
     ).toBeVisible();
-    await expect(page.getByText(/Editorial food photography/i)).toBeVisible();
+    await expect(
+      page.getByRole('contentinfo').getByText(/representative stock photography/i),
+    ).toBeVisible();
     expect(consoleErrors.filter((message) => /fetchPriority/i.test(message))).toEqual([]);
   });
 

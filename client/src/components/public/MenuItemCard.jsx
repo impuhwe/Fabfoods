@@ -51,7 +51,7 @@ export function MenuItemCard({ item }) {
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <Badge variant={item.isOrderable ? 'success' : 'neutral'} dot>
-          {item.isOrderable ? 'Available' : 'Not orderable yet'}
+          {item.isOrderable ? 'Available' : 'Unavailable online'}
         </Badge>
 
         {item.isOrderable && !hasOptions ? (

@@ -63,7 +63,7 @@ export function MenuImageManager({ itemName, image, gallery = [], onChange, enab
         <div>
           <p className="font-display text-lg font-semibold text-cocoa-950">Photographs</p>
           <p className="mt-1 text-xs text-cocoa-500">
-            Signed uploads go directly to Cloudinary. Save the item to attach the new image.
+            Upload a photo, then save the item to attach it.
           </p>
         </div>
         <Badge variant={hasImage ? 'success' : 'warning'} dot>
@@ -73,8 +73,8 @@ export function MenuImageManager({ itemName, image, gallery = [], onChange, enab
 
       {enabled ? null : (
         <p className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 text-xs text-cocoa-700">
-          Cloudinary credentials are not configured. Existing local photos remain available, but
-          uploads and removals are disabled.
+          Photo storage is not configured. Existing photos remain available; uploads and removals
+          are disabled.
         </p>
       )}
 
@@ -94,7 +94,7 @@ export function MenuImageManager({ itemName, image, gallery = [], onChange, enab
           fallback={HERO_IMAGE}
           alt={
             image?.alt ||
-            (itemName ? `Illustrative image for ${itemName}` : 'Illustrative menu image')
+            (itemName ? `Photo for ${itemName}` : 'Menu item photo')
           }
           className="h-32 w-full rounded-xl object-cover sm:w-44"
         />
@@ -104,7 +104,11 @@ export function MenuImageManager({ itemName, image, gallery = [], onChange, enab
               Primary image
             </p>
             <p className="break-all text-xs text-cocoa-600">
-              {image?.publicId || (hasImage ? 'Local menu asset' : 'No image attached')}
+              {image?.publicId
+                ? 'Managed photo'
+                : hasImage
+                  ? 'Local menu asset'
+                  : 'No image attached'}
             </p>
           </div>
           <Field label="Alt text">
@@ -113,7 +117,7 @@ export function MenuImageManager({ itemName, image, gallery = [], onChange, enab
               onChange={(event) =>
                 onChange({ image: { ...(image ?? {}), alt: event.target.value } })
               }
-              placeholder={`Illustrative image for ${itemName ?? 'dish'}`}
+              placeholder={`Photo for ${itemName ?? 'dish'}`}
               disabled={disabled || busy || !hasImage}
             />
           </Field>

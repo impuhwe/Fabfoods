@@ -230,7 +230,7 @@ export function MenuItemPage() {
         <div className="mx-auto mt-8 max-w-4xl">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={item.isOrderable ? 'success' : 'neutral'} dot>
-              {item.isOrderable ? 'Available' : 'Awaiting owner confirmation'}
+              {item.isOrderable ? 'Available' : 'Awaiting confirmation'}
             </Badge>
             <span className="text-xs text-cocoa-500">{item.category?.name}</span>
           </div>
@@ -276,8 +276,8 @@ export function MenuItemPage() {
               <div className="mt-5 flex gap-3 rounded-xl border border-warning/25 bg-warning/5 p-4 text-sm text-cocoa-700">
                 <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
                 <p>
-                  This dish is visible for reference, but online ordering is paused until the owner
-                  confirms its name and price.
+                  This dish is visible for reference, but online ordering is paused until its name
+                  and price are confirmed.
                 </p>
               </div>
             ) : null}

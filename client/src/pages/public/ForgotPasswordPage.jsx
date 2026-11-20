@@ -7,15 +7,14 @@ import usePageMeta from '../../hooks/usePageMeta.js';
 export function ForgotPasswordPage() {
   usePageMeta({
     title: 'Password reset',
-    description:
-      'Password reset is not available yet because transactional email is not connected.',
+    description: 'Password reset is currently unavailable.',
   });
 
   return (
     <AuthShell
       eyebrow="Password reset"
-      title="Email reset is not connected yet."
-      description="The site can create and sign in accounts, but it cannot send password reset emails until the restaurant's email service is configured."
+      title="Password reset is currently unavailable."
+      description="You can sign in to your account, but password reset emails are not being sent yet."
       footer={
         <Link to="/login" className="font-semibold text-cocoa-950 underline">
           Back to sign in
@@ -26,8 +25,8 @@ export function ForgotPasswordPage() {
         <KeyRound className="h-5 w-5 text-warning" aria-hidden="true" />
         <p className="mt-3 font-semibold text-cocoa-900">No reset has been sent.</p>
         <p className="mt-1">
-          We are not showing a form that would pretend to send an email. Once email delivery is
-          connected, password reset will be enabled here.
+          Password reset will be available here when the restaurant enables it. Contact the
+          restaurant if you need help signing in.
         </p>
       </div>
       <Button asChild variant="secondary" className="mt-5 w-full">

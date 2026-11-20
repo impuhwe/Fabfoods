@@ -11,8 +11,7 @@ export function GalleryPage() {
 
   usePageMeta({
     title: 'Gallery',
-    description:
-      'A visual preview of the FAB FOODS restaurant and coffee house in Kigali. Temporary editorial imagery until restaurant photography is supplied.',
+    description: 'Representative food and drink photography used for menu reference.',
     image: HERO_IMAGE,
   });
 
@@ -26,11 +25,10 @@ export function GalleryPage() {
           <div className="mt-4 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div className="max-w-2xl">
               <h1 className="font-display text-display-lg font-semibold text-cocoa-950">
-                A look around.
+                A closer look.
               </h1>
               <p className="mt-3 text-base leading-relaxed text-cocoa-600">
-                Temporary editorial imagery is shown here while genuine FAB FOODS photography is
-                being prepared. These images are not photographs of the restaurant.
+                These are representative stock photographs used for menu reference.
               </p>
             </div>
             <Button asChild variant="order">
@@ -68,7 +66,7 @@ export function GalleryPage() {
           ))}
         </div>
         <p className="mt-5 text-xs text-cocoa-500">
-          Temporary editorial imagery. Genuine restaurant photography will replace this set.
+          Food images are representative stock photography used for menu reference.
         </p>
       </section>
 

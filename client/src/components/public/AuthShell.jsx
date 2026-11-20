@@ -7,7 +7,7 @@ export function AuthShell({ eyebrow, title, description, children, footer }) {
       <div className="relative hidden overflow-hidden bg-cocoa-950 text-cream-50 lg:block">
         <img
           src={HERO_IMAGE}
-          alt="Warm restaurant dining room with timber tables"
+          alt="Representative stock photograph of a breakfast spread."
           className="absolute inset-0 h-full w-full object-cover opacity-60"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-cocoa-950/90 via-cocoa-950/40 to-cocoa-950/20" />

@@ -36,7 +36,7 @@ export function AcceptInvitation() {
   async function onSubmit(values) {
     setSubmitError('');
     if (!token) {
-      setSubmitError('This invitation link is missing its token. Request a new invitation.');
+      setSubmitError('This invitation link is invalid. Request a new invitation.');
       return;
     }
     try {
@@ -98,7 +98,7 @@ export function AcceptInvitation() {
 
               {!token ? (
                 <p role="alert" className="text-sm text-danger">
-                  This invitation link is missing its token. Request a new invitation.
+                  This invitation link is invalid. Request a new invitation.
                 </p>
               ) : null}
               {submitError ? (

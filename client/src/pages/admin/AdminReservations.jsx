@@ -164,7 +164,7 @@ export function AdminReservations() {
         <div>
           <h2 className="font-display text-2xl font-semibold text-cocoa-950">Reservations</h2>
           <p className="mt-1 text-sm text-cocoa-600">
-            Requests stay pending until a staff member explicitly approves them.
+            Table requests stay pending until staff approve.
           </p>
         </div>
         <div className="flex items-end gap-2">
@@ -289,7 +289,7 @@ export function AdminReservations() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-cocoa-500">
                       <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-                      Historical food & drink pre-selection
+                      Earlier food and drink preferences
                     </p>
                     {selected.selectionStatusLabel ? (
                       <Badge

@@ -24,6 +24,6 @@ describe('menu imagery', () => {
       '/images/menu/espresso.webp',
     );
     expect(resolveImageSrc('', categoryImage('hot-coffee'))).toBe(categoryImage('hot-coffee'));
-    expect(resolveImageSrc('', '')).toMatch(/^https:\/\/images\.unsplash\.com\//);
+    expect(resolveImageSrc('', '')).toBe('/images/menu/continental-breakfast.webp');
   });
 });

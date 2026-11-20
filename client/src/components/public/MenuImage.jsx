@@ -49,7 +49,7 @@ export function MenuImage({ item, alt, priority = false, sizes, className = '', 
       alt={
         alt ??
         item?.image?.alt ??
-        (item?.name ? `Illustrative image for ${item.name}` : 'Menu item')
+        (item?.name ? `Photo for ${item.name}` : 'Menu item photo')
       }
       priority={priority}
       sizes={sizes}

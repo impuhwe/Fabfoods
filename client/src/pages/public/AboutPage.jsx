@@ -61,7 +61,7 @@ export function AboutPage() {
           <div className="overflow-hidden rounded-2xl">
             <img
               src={STORY_IMAGE}
-              alt="A restaurant table set for service"
+              alt="Representative stock photograph of a sandwich"
               className="aspect-[4/5] w-full object-cover"
             />
           </div>
@@ -72,7 +72,7 @@ export function AboutPage() {
         <SectionHeading
           eyebrow="What we do"
           title="One kitchen, many moods."
-          description="The menu is built from the restaurant's printed food and drink menus. It moves from breakfast through the day without pretending to be anything else."
+          description="The menu follows the restaurant's printed food and drink menus, from breakfast through the rest of the day."
         />
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           {PILLARS.map((pillar) => (
@@ -92,7 +92,7 @@ export function AboutPage() {
           <div className="min-h-[320px]">
             <img
               src={HERO_IMAGE}
-              alt="Warm restaurant dining room with timber tables"
+              alt="Representative stock photograph of a breakfast spread"
               loading="lazy"
               className="h-full w-full object-cover opacity-80"
             />
@@ -102,11 +102,11 @@ export function AboutPage() {
               The table
             </p>
             <h2 className="mt-4 font-display text-display-lg font-semibold leading-none">
-              Come for one thing. Stay for another.
+              Coffee, meals and time to settle in.
             </h2>
             <p className="mt-5 text-base leading-relaxed text-cream-100/70">
-              A coffee that turns into lunch. A salad that turns into dessert. A table request that
-              becomes an afternoon. The menu is designed to make that easy.
+              Browse the menu for breakfast, plates, coffee and cold drinks. When you are ready,
+              send a table request and the restaurant will confirm it with you.
             </p>
             <div className="mt-8">
               <Button asChild variant="onDark">
@@ -121,7 +121,7 @@ export function AboutPage() {
         <div className="overflow-hidden rounded-2xl">
           <img
             src={COFFEE_IMAGE}
-            alt="Coffee served in a warm-toned cup"
+            alt="Representative stock photograph of a coffee drink"
             loading="lazy"
             className="aspect-square w-full object-cover"
           />
@@ -130,19 +130,18 @@ export function AboutPage() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-ember-700">
             The details
           </p>
-          <h2 className="mt-4 font-display text-display-lg font-semibold text-cocoa-950">
-            Honest by default.
-          </h2>
-          <div className="mt-5 space-y-4 text-base leading-relaxed text-cocoa-600">
-            <p>
-              Prices shown on this site come from the restaurant&apos;s menus. Some items are still
-              being confirmed with the owner; those are marked clearly and cannot be ordered online
-              until they are confirmed.
-            </p>
-            <p>
-              We do not publish invented descriptions, ingredients or allergens. If you need to know
-              what is in a dish, ask the restaurant before you order.
-            </p>
+            <h2 className="mt-4 font-display text-display-lg font-semibold text-cocoa-950">
+              Before you order.
+            </h2>
+            <div className="mt-5 space-y-4 text-base leading-relaxed text-cocoa-600">
+              <p>
+                Prices shown on this site come from the restaurant&apos;s menus. Some items are
+                awaiting confirmation and cannot be ordered online yet.
+              </p>
+              <p>
+                Descriptions, ingredients and allergens are not published yet. If you need to know
+                what is in a dish, ask the restaurant before you order.
+              </p>
             <p>
               Table requests are reviewed by a person. A submitted request is not a confirmed
               reservation.

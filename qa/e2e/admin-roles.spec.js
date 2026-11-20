@@ -16,8 +16,10 @@ test('admin sees capability-based modules and staff cannot reach privileged page
   const staffEmail = `qa-staff-${Date.now()}@example.com`;
 
   await signIn(page, 'qa-admin@example.com', 'QaAdminPass123');
-  await expect(page.getByRole('heading', { name: 'Business at a glance' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Customers', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Today's numbers" })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Customers', exact: true })).toHaveCount(0);
+  await expect(page.getByText('Customers', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /log out/i })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Staff', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Email outbox', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Audit log', exact: true })).toBeVisible();
@@ -32,7 +34,8 @@ test('admin sees capability-based modules and staff cannot reach privileged page
   const temporaryPassword = (await page.locator('code').last().textContent())?.trim() ?? '';
   expect(temporaryPassword.length).toBeGreaterThan(12);
 
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  await page.getByRole('button', { name: /log out/i }).click();
+  await expect(page.getByText('Signed out')).toBeVisible();
   await signIn(page, staffEmail, temporaryPassword);
 
   await expect(page.getByRole('link', { name: 'Orders', exact: true })).toBeVisible();
@@ -46,7 +49,7 @@ test('admin sees capability-based modules and staff cannot reach privileged page
   await expect(page.getByRole('heading', { name: 'This area is for staff.' })).toBeVisible();
 });
 
-test('admin can open menu catalogue, customer, email and audit modules', async ({ page }) => {
+test('admin can open menu catalogue, email and audit modules', async ({ page }) => {
   await signIn(page, 'qa-admin@example.com', 'QaAdminPass123');
 
   await page.getByRole('link', { name: 'Menu review', exact: true }).click();
@@ -54,8 +57,9 @@ test('admin can open menu catalogue, customer, email and audit modules', async (
   await expect(page.getByText('Create menu item')).toBeVisible();
   await expect(page.getByText('Create or edit category')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Customers', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Customers', level: 2 })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Customers', exact: true })).toHaveCount(0);
+  await page.goto('/admin/customers');
+  await expect(page.getByRole('heading', { name: 'Nothing on this plate.' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Email outbox', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Email outbox', level: 2 })).toBeVisible();

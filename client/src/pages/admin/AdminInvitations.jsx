@@ -113,8 +113,8 @@ export function AdminInvitations() {
         <Card>
           <CardTitle>Invite an administrator</CardTitle>
           <CardDescription>
-            Invitations are sent through the existing Brevo integration. One-time links are never
-            shown here, logged or returned by the API.
+            Invitations are sent by the configured email provider. One-time links are never shown,
+            stored or shared here.
           </CardDescription>
           <form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={createInvitation}>
             <Field label="Name">

@@ -187,7 +187,7 @@ export function ReservationsPage() {
       <section className="relative isolate overflow-hidden bg-cocoa-950 text-cream-50">
         <img
           src={RESERVATION_IMAGE}
-          alt="Restaurant table set for service"
+          alt="Representative stock photograph of a coffee drink"
           {...HIGH_PRIORITY_IMAGE_PROPS}
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover opacity-40"

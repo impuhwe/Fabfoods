@@ -85,7 +85,7 @@ export function AdminStaff() {
         <div>
           <h2 className="font-display text-2xl font-semibold text-cocoa-950">Staff</h2>
           <CardDescription>
-            Manage staff access without exposing password hashes or secrets.
+            Manage staff access. Passwords and secrets are never shown here.
           </CardDescription>
         </div>
         <Button variant="secondary" onClick={load} disabled={loading}>

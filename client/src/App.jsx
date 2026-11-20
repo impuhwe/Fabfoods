@@ -28,7 +28,6 @@ import AdminReservations from './pages/admin/AdminReservations.jsx';
 import AdminCatering from './pages/admin/AdminCatering.jsx';
 import AdminMenuReview from './pages/admin/AdminMenuReview.jsx';
 import AdminSettings from './pages/admin/AdminSettings.jsx';
-import AdminCustomers from './pages/admin/AdminCustomers.jsx';
 import AdminStaff from './pages/admin/AdminStaff.jsx';
 import AdminInvitations from './pages/admin/AdminInvitations.jsx';
 import AdminEmails from './pages/admin/AdminEmails.jsx';
@@ -60,9 +59,9 @@ export function App() {
           element={
             <AuthNoticePage
               eyebrow="Password reset"
-              title="Reset links are not active yet."
-              description="Transactional email is not connected, so reset links cannot be sent."
-              note="No password has been changed. When email delivery is configured, reset links will open here."
+              title="Password reset is currently unavailable."
+              description="Password reset emails are not being sent yet."
+              note="No password has been changed."
             />
           }
         />
@@ -71,9 +70,9 @@ export function App() {
           element={
             <AuthNoticePage
               eyebrow="Email verification"
-              title="Email verification is not active yet."
-              description="Accounts work without email verification for now because email delivery is not connected."
-              note="No verification email has been sent. This page will become the verification landing page once email is configured."
+              title="Email verification is not required."
+              description="You can sign in without verifying an email address."
+              note="No verification email has been sent."
             />
           }
         />
@@ -135,14 +134,6 @@ export function App() {
           }
         />
         <Route
-          path="customers"
-          element={
-            <RequirePermission permissions={[PERMISSIONS.CUSTOMERS_VIEW]}>
-              <AdminCustomers />
-            </RequirePermission>
-          }
-        />
-        <Route
           path="staff"
           element={
             <RequirePermission permissions={[PERMISSIONS.STAFF_VIEW]}>
@@ -182,6 +173,7 @@ export function App() {
             </RequirePermission>
           }
         />
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   );

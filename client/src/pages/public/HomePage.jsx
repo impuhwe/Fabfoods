@@ -84,7 +84,7 @@ export function HomePage() {
       <section className="relative isolate min-h-[74vh] overflow-hidden bg-cocoa-950 text-cream-50">
         <img
           src={FOOD_HERO_IMAGE}
-          alt="A table of shared dishes on a restaurant table"
+          alt="Representative stock photograph of grilled chicken"
           {...HIGH_PRIORITY_IMAGE_PROPS}
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
@@ -107,8 +107,8 @@ export function HomePage() {
             </h1>
 
             <p className="mt-7 max-w-xl font-display text-lg leading-relaxed text-cream-100/80 sm:text-xl">
-              A restaurant and coffee house in Kigali. Explore the current menu, reserve a table, or
-              place a pickup order.
+              A restaurant and coffee house in Kigali. Explore the menu, request a table, or place a
+              pickup order.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -123,8 +123,7 @@ export function HomePage() {
               </Button>
             </div>
             <p className="mt-5 text-xs text-cream-100/55">
-              Illustrative editorial food photography, not photographs of FAB FOODS dishes. Menu
-              details come from the current site data.
+              Food images are representative stock photography used for menu reference.
             </p>
           </div>
 
@@ -263,7 +262,7 @@ export function HomePage() {
               : featured.slice(0, 3).map((item) => <MenuItemCard key={item.id} item={item} />)}
             {!loading && !featured.length ? (
               <div className="rounded-2xl border border-cocoa-900/10 bg-cream-50 p-6 text-sm text-cocoa-600 md:col-span-2 lg:col-span-3">
-                No verified menu items are published yet. Please check back soon.
+                No menu items are available right now. Please check back soon.
               </div>
             ) : null}
           </div>
@@ -295,7 +294,7 @@ export function HomePage() {
         <div className="min-h-[320px]">
           <img
             src={STORY_IMAGE}
-            alt="A restaurant table set for service"
+            alt="Representative stock photograph of a sandwich"
             loading="lazy"
             className="h-full w-full object-cover"
           />
@@ -306,7 +305,7 @@ export function HomePage() {
         <div className="order-2 overflow-hidden rounded-2xl lg:order-1">
           <img
             src={COFFEE_IMAGE}
-            alt="Coffee served in a warm-toned cup"
+            alt="Representative stock photograph of a coffee drink"
             loading="lazy"
             className="aspect-[4/5] h-full w-full object-cover"
           />
@@ -337,9 +336,9 @@ export function HomePage() {
 
       <section className="mx-auto max-w-[1240px] px-5 py-16 sm:px-8 lg:px-12 lg:py-20">
         <SectionHeading
-          eyebrow="In the room"
-          title="A look around."
-          description="Illustrative editorial imagery, not photographs of FAB FOODS dishes, while restaurant photography is being prepared."
+          eyebrow="From the menu"
+          title="A closer look."
+          description="Representative food and drink photography used for menu reference."
           action={
             <Button asChild variant="ghost">
               <Link to="/gallery">

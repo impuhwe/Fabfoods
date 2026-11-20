@@ -183,7 +183,7 @@ export function MenuPage() {
               </h1>
               <p className="mt-3 text-base leading-relaxed text-cocoa-600">
                 {activeCategory?.description ||
-                  'Browse by category or search the full menu. Items awaiting owner confirmation are visible but cannot be ordered online yet.'}
+                  'Browse by category or search the full menu. Some items are awaiting confirmation and cannot be ordered online yet.'}
               </p>
             </div>
             <div className="flex w-full max-w-md items-center gap-2">
@@ -326,8 +326,8 @@ export function MenuPage() {
           <p className="font-semibold text-cocoa-900">A note on the menu</p>
           <p className="mt-1">
             Menu names and prices come from the restaurant&apos;s printed menus. Items marked
-            “Awaiting confirmation” cannot be added to an online order until the owner confirms
-            them. No descriptions, ingredients or allergens have been invented.
+            “Awaiting confirmation” cannot be added to an online order yet. Descriptions, ingredients
+            and allergens are not published yet.
           </p>
           <Link to="/contact" className="mt-2 inline-block font-semibold text-ember-700 underline">
             Ask about a dish

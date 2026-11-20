@@ -24,56 +24,49 @@ const SECTIONS = [
     to: '/admin/orders',
     icon: ClipboardList,
     title: 'Orders',
-    copy: 'Review incoming orders, update kitchen status and record offline payments.',
+    copy: 'Review new orders, update status and record offline payments.',
     permission: PERMISSIONS.ORDERS_VIEW,
   },
   {
     to: '/admin/reservations',
     icon: CalendarDays,
     title: 'Reservations',
-    copy: 'Approve or decline table requests and keep the service team informed.',
+    copy: 'Approve or decline table requests.',
     permission: PERMISSIONS.RESERVATIONS_VIEW,
   },
   {
     to: '/admin/menu-review',
     icon: ClipboardCheck,
     title: 'Menu review',
-    copy: 'Resolve PDF review issues, correct menu data and publish verified items.',
+    copy: 'Review source issues and publish verified items.',
     permission: PERMISSIONS.MENU_VIEW,
-  },
-  {
-    to: '/admin/customers',
-    icon: Users,
-    title: 'Customers',
-    copy: 'View customer activity, orders and reservations.',
-    permission: PERMISSIONS.CUSTOMERS_VIEW,
   },
   {
     to: '/admin/staff',
     icon: Users,
     title: 'Staff',
-    copy: 'Create staff accounts and manage roles and account status.',
+    copy: 'Create staff accounts and manage roles.',
     permission: PERMISSIONS.STAFF_VIEW,
   },
   {
     to: '/admin/emails',
     icon: Mail,
     title: 'Email outbox',
-    copy: 'Inspect queued messages and retry failed deliveries.',
+    copy: 'Review queued emails and retry failed deliveries.',
     permission: PERMISSIONS.EMAILS_VIEW,
   },
   {
     to: '/admin/audit',
     icon: ScrollText,
     title: 'Audit log',
-    copy: 'Review sensitive administrative actions.',
+    copy: 'Review administrative actions.',
     permission: PERMISSIONS.AUDIT_VIEW,
   },
   {
     to: '/admin/settings',
     icon: Settings,
     title: 'Business settings',
-    copy: 'Manage contact details, hours, delivery zones, payments and public verification.',
+    copy: 'Manage contact details, hours, delivery, payments and verification.',
     permission: PERMISSIONS.SETTINGS_VIEW,
   },
 ];
@@ -82,7 +75,6 @@ const STAT_CARDS = [
   { key: 'activeOrders', label: 'Active orders' },
   { key: 'ordersToday', label: 'Orders today' },
   { key: 'pendingReservations', label: 'Pending tables' },
-  { key: 'customers', label: 'Customers' },
   { key: 'publishedMenuItems', label: 'Published items' },
   { key: 'menuItemsAwaitingReview', label: 'Awaiting review' },
 ];
@@ -115,25 +107,24 @@ export function AdminHome() {
 
   const badge =
     apiStatus === 'online'
-      ? { variant: 'success', label: 'API online' }
+      ? { variant: 'success', label: 'Systems online' }
       : apiStatus === 'offline'
-        ? { variant: 'danger', label: 'API unreachable' }
-        : { variant: 'neutral', label: 'Checking API' };
+        ? { variant: 'danger', label: 'Systems unreachable' }
+        : { variant: 'neutral', label: 'Checking systems' };
 
   const sections = SECTIONS.filter((section) => can(user, section.permission));
 
   return (
     <div className="space-y-6">
-      <Card className="bg-cocoa-950 text-cream-50">
+      <Card className="!bg-cocoa-950 text-cream-50">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cream-100/50">
-              Welcome back
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cream-100/80">
+              FAB FOODS operations
             </p>
             <h2 className="mt-2 font-display text-display-sm font-semibold">{user?.name}</h2>
-            <p className="mt-2 max-w-xl text-sm text-cream-100/60">
-              Orders, reservations and business settings are managed from this workspace. Delivery
-              and online payments remain unavailable until they are verified and configured.
+            <p className="mt-2 max-w-xl text-sm text-cream-100/80">
+              Delivery and online payments stay unavailable until they are verified and configured.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -151,8 +142,8 @@ export function AdminHome() {
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <CardTitle>Business at a glance</CardTitle>
-              <CardDescription>Live counts from the current restaurant data.</CardDescription>
+              <CardTitle>Today&apos;s numbers</CardTitle>
+              <CardDescription>Current FAB FOODS counts.</CardDescription>
             </div>
             {stats ? (
               <Badge variant="neutral">Paid revenue {formatRwf(stats.summary.paidRevenue)}</Badge>
@@ -212,8 +203,8 @@ export function AdminHome() {
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <CardTitle>Operational guardrails</CardTitle>
-            <CardDescription>Current safe defaults for the live restaurant site.</CardDescription>
+            <CardTitle>Service rules</CardTitle>
+            <CardDescription>Current FAB FOODS service rules.</CardDescription>
           </div>
           <ShieldCheck className="h-5 w-5 text-cocoa-400" aria-hidden="true" />
         </div>
@@ -223,19 +214,19 @@ export function AdminHome() {
               className="mt-0.5 h-4 w-4 shrink-0 text-cocoa-400"
               aria-hidden="true"
             />
-            New orders can be paused instantly without taking the menu offline.
+            Pause new orders without hiding the menu.
           </p>
           <p className="flex items-start gap-2">
             <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-cocoa-400" aria-hidden="true" />
-            Table requests always require explicit staff approval.
+            Table requests need staff approval.
           </p>
           <p className="flex items-start gap-2">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-cocoa-400" aria-hidden="true" />
-            Contact details and opening hours stay hidden until marked approved.
+            Contact details and hours stay hidden until approved.
           </p>
           <p className="flex items-start gap-2">
             <Activity className="mt-0.5 h-4 w-4 shrink-0 text-cocoa-400" aria-hidden="true" />
-            Delivery and online payments require verified configuration.
+            Delivery and online payments need verified setup.
           </p>
         </div>
       </Card>

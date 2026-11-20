@@ -17,6 +17,7 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useToast } from '../../contexts/ToastContext.jsx';
 import { can, PERMISSIONS } from '../../lib/permissions.js';
 import { cn } from '../../lib/cn.js';
 import Badge from '../ui/Badge.jsx';
@@ -44,12 +45,6 @@ const NAV = [
     label: 'Menu review',
     icon: ClipboardCheck,
     permission: PERMISSIONS.MENU_VIEW,
-  },
-  {
-    to: '/admin/customers',
-    label: 'Customers',
-    icon: Users,
-    permission: PERMISSIONS.CUSTOMERS_VIEW,
   },
   {
     to: '/admin/staff',
@@ -94,7 +89,6 @@ const TITLES = {
   '/admin/orders': 'Orders',
   '/admin/reservations': 'Reservations',
   '/admin/menu-review': 'Menu review',
-  '/admin/customers': 'Customers',
   '/admin/staff': 'Staff',
   '/admin/invitations': 'Administrator invitations',
   '/admin/emails': 'Email outbox',
@@ -103,16 +97,9 @@ const TITLES = {
   '/admin/settings': 'Settings',
 };
 
-function SidebarContent({ onNavigate }) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+function SidebarContent({ onNavigate, onLogout, loggingOut }) {
+  const { user } = useAuth();
   const items = NAV.filter((item) => !item.permission || can(user, item.permission));
-
-  async function handleLogout() {
-    await logout();
-    onNavigate?.();
-    navigate('/admin/login', { replace: true });
-  }
 
   return (
     <div className="flex h-full flex-col">
@@ -159,11 +146,15 @@ function SidebarContent({ onNavigate }) {
         </div>
         <button
           type="button"
-          onClick={handleLogout}
-          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-cream-100/70 transition-colors hover:bg-cream-100/5 hover:text-cream-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember-400"
+          onClick={() => {
+            onNavigate?.();
+            onLogout();
+          }}
+          disabled={loggingOut}
+          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-cream-100/70 transition-colors hover:bg-cream-100/5 hover:text-cream-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <LogOut className="h-4 w-4" aria-hidden="true" />
-          Sign out
+          {loggingOut ? 'Signing out...' : 'Sign out'}
         </button>
       </div>
     </div>
@@ -172,9 +163,30 @@ function SidebarContent({ onNavigate }) {
 
 export function AdminLayout() {
   const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const { logout } = useAuth();
+  const { addToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const title = TITLES[location.pathname] ?? 'Operations';
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+      addToast({ title: 'Signed out', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: 'Sign-out incomplete',
+        description: error.message,
+        variant: 'error',
+      });
+    } finally {
+      setLoggingOut(false);
+      navigate('/admin/login', { replace: true });
+    }
+  }
 
   return (
     <div className="min-h-dvh bg-cream-100">
@@ -183,7 +195,7 @@ export function AdminLayout() {
       </a>
 
       <aside className="fixed inset-y-0 left-0 hidden w-64 bg-cocoa-950 lg:block">
-        <SidebarContent />
+        <SidebarContent onLogout={handleLogout} loggingOut={loggingOut} />
       </aside>
 
       <div className="lg:pl-64">
@@ -204,10 +216,22 @@ export function AdminLayout() {
                 {title}
               </h1>
             </div>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/')}>
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Back to site
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={() => navigate('/')}>
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Back to site
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleLogout}
+                loading={loggingOut}
+                aria-label="Log out of the admin dashboard"
+              >
+                {loggingOut ? null : <LogOut className="h-4 w-4" aria-hidden="true" />}
+                Logout
+              </Button>
+            </div>
           </div>
           <Outlet />
         </main>
@@ -215,7 +239,11 @@ export function AdminLayout() {
 
       <Drawer open={open} onClose={() => setOpen(false)} title="Admin menu" side="left">
         <div className="-mx-5 -my-5 h-[calc(100%+2.5rem)] bg-cocoa-950">
-          <SidebarContent onNavigate={() => setOpen(false)} />
+          <SidebarContent
+            onNavigate={() => setOpen(false)}
+            onLogout={handleLogout}
+            loggingOut={loggingOut}
+          />
         </div>
       </Drawer>
     </div>

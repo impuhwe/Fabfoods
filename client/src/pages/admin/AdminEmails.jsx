@@ -77,7 +77,7 @@ export function AdminEmails() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="font-display text-2xl font-semibold text-cocoa-950">Email outbox</h2>
-          <CardDescription>Inspect queued messages and retry failed deliveries.</CardDescription>
+          <CardDescription>Review queued emails and retry failed deliveries.</CardDescription>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={load} disabled={loading}>

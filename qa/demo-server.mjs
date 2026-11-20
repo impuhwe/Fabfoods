@@ -16,7 +16,7 @@ process.env.PAYMENT_PROVIDER = 'disabled';
 process.env.EMAIL_DELIVERY_ENABLED = 'false';
 
 const demoApiPort = process.env.DEMO_API_PORT ?? '5002';
-const clientOrigin = process.env.DEMO_CLIENT_ORIGIN ?? 'http://127.0.0.1:5175';
+const clientOrigin = process.env.DEMO_CLIENT_ORIGIN ?? 'http://localhost:5175';
 
 process.env.PORT = demoApiPort;
 process.env.CLIENT_ORIGIN = clientOrigin;

@@ -10,7 +10,7 @@ export default defineConfig({
     'import.meta.env.VITE_API_URL': JSON.stringify('/api/v1'),
   },
   server: {
-    host: '127.0.0.1',
+    host: 'localhost',
     port: 5175,
     strictPort: true,
     proxy: {

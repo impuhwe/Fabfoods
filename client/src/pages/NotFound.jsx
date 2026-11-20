@@ -13,8 +13,7 @@ export function NotFound() {
         Nothing on this plate.
       </h1>
       <p className="mt-3 text-cocoa-600">
-        The page you asked for does not exist yet. The menu and ordering pages arrive in a later
-        phase.
+        The page you asked for could not be found. Try again or return home.
       </p>
       <Button asChild variant="order" className="mt-8">
         <Link to="/">Back to home</Link>

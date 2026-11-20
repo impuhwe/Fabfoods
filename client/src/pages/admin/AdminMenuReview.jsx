@@ -231,7 +231,7 @@ export function AdminMenuReview() {
     requestConfirm({
       title: `Verify and publish ${selectedItem.name}?`,
       description:
-        'This marks the item as staff-verified, makes it available to customers and records who published it. Review issues remain until separately resolved.',
+        'Publishes the item and logs who verified it. Review issues stay open.',
       confirmLabel: 'Verify & publish',
       action: async () => {
         const updated = await verifyAdminMenuItem(selectedItem.id, { note: draft?.note ?? '' });
@@ -284,7 +284,7 @@ export function AdminMenuReview() {
     requestConfirm({
       title: `Resolve ${issue.issueId}?`,
       description:
-        'This closes the issue, records the resolution note and recalculates which menu items are blocked. The action is recorded in the audit history.',
+        'Closes the issue, logs the resolution and recalculates blocked items.',
       confirmLabel: 'Resolve issue',
       action: async () => {
         await resolveAdminReviewIssue(issue.id, { status: 'resolved', resolution });
@@ -330,14 +330,13 @@ export function AdminMenuReview() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cocoa-500">
-            Manager / Admin
+            Menu operations
           </p>
           <h2 className="mt-1 font-display text-display-sm font-semibold text-cocoa-950">
             Menu review
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-cocoa-600">
-            Resolve the 24 PDF review issues, correct menu records and publish items only after
-            staff verification. Every action is recorded.
+            Review source issues and verify items before publishing. Actions are logged.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -345,7 +344,7 @@ export function AdminMenuReview() {
             {unresolvedIssues.length} unresolved issue{unresolvedIssues.length === 1 ? '' : 's'}
           </Badge>
           <Badge variant={imageStatus?.configured ? 'success' : 'warning'} dot>
-            {imageStatus?.configured ? 'Cloudinary ready' : 'Cloudinary not configured'}
+            {imageStatus?.configured ? 'Photo uploads ready' : 'Photo uploads not configured'}
           </Badge>
         </div>
       </div>
@@ -470,8 +469,7 @@ export function AdminMenuReview() {
                 Select a menu item
               </p>
               <p className="mt-2 max-w-sm text-sm text-cocoa-500">
-                Choose an item from the list to review its source data, edit fields, resolve issues
-                and publish it.
+                Choose an item to review, edit and publish.
               </p>
             </div>
           ) : (
@@ -484,7 +482,7 @@ export function AdminMenuReview() {
                   <h3 className="mt-1 font-display text-xl font-semibold text-cocoa-950">
                     {selectedItem.name}
                   </h3>
-                  <p className="mt-1 text-xs text-cocoa-500">Slug: {selectedItem.slug}</p>
+                  <p className="mt-1 text-xs text-cocoa-500">Reference: {selectedItem.slug}</p>
                   {itemBadges(selectedItem)}
                 </div>
                 <div className="text-right text-xs text-cocoa-500">
@@ -586,7 +584,7 @@ export function AdminMenuReview() {
                 <Field
                   key={field}
                   label={`${label} (JSON)`}
-                  hint="Use a JSON array. Server validation applies before anything is saved."
+                  hint="Enter options as a JSON array. Invalid entries cannot be saved."
                 >
                   <textarea
                     rows={4}
@@ -658,7 +656,7 @@ export function AdminMenuReview() {
         <div className="border-b border-cocoa-900/10 px-5 py-4">
           <p className="font-display text-lg font-semibold text-cocoa-950">Review issues</p>
           <p className="mt-1 text-xs text-cocoa-500">
-            Source issues from the authoritative PDF manifest. Resolving one updates blocked items.
+            Source issues. Resolving one updates blocked items.
           </p>
         </div>
         <div className="divide-y divide-cocoa-900/10">

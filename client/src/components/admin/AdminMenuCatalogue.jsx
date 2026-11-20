@@ -152,10 +152,10 @@ export function AdminMenuCatalogue({ categories, onChanged }) {
         <div>
           <h3 className="font-display text-lg font-semibold text-cocoa-950">Menu catalogue</h3>
           <p className="mt-1 text-sm text-cocoa-600">
-            New records stay unverified and unavailable until staff review is complete.
+            New items stay hidden until verified.
           </p>
         </div>
-        <Badge variant="neutral">Manager / Admin</Badge>
+        <Badge variant="neutral">Catalogue</Badge>
       </div>
 
       {error ? (

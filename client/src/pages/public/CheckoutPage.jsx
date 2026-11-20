@@ -114,7 +114,7 @@ export function CheckoutPage() {
           setQuoteError(
             getApiErrorMessage(
               error,
-              'The order could not be priced. Remove any item that is awaiting confirmation.',
+              'The order could not be priced. Remove any item that is awaiting confirmation, then try again.',
             ),
           );
         }

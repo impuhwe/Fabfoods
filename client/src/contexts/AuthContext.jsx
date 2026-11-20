@@ -51,9 +51,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await api.post('/auth/logout').catch(() => undefined);
+    let logoutError;
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      logoutError = error;
+    }
     setUser(null);
     setStatus('guest');
+    if (logoutError) {
+      throw new Error(getApiErrorMessage(logoutError, 'Unable to sign out'));
+    }
   }, []);
 
   const refreshUser = useCallback(async () => {

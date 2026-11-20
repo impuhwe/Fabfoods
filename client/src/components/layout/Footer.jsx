@@ -116,7 +116,10 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col justify-between gap-3 border-t border-cream-100/10 pt-5 text-xs text-cream-100/40 sm:flex-row">
           <p>© {new Date().getFullYear()} FAB FOODS. All rights reserved.</p>
-          <p>Illustrative editorial imagery, not FAB FOODS photography.</p>
+          <p className="text-cream-100/60">
+            Food images are representative stock photography used for menu reference. Actual FAB
+            FOODS photography will be added when available.
+          </p>
         </div>
       </div>
     </footer>
