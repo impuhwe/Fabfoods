@@ -1,0 +1,13 @@
+process.env.NODE_ENV = 'test';
+process.env.MONGODB_URI ??= 'mongodb://127.0.0.1:27017/fabfoods_test_placeholder';
+process.env.CLIENT_ORIGIN ??= 'http://localhost:5173';
+process.env.ACCESS_TOKEN_SECRET ??= 'test-access-secret-0123456789abcdef0123456789';
+process.env.REFRESH_TOKEN_PEPPER ??= 'test-refresh-pepper-0123456789abcdef0123456789';
+process.env.ACCESS_TOKEN_TTL = '15m';
+process.env.REFRESH_TOKEN_TTL_DAYS = '7';
+process.env.BCRYPT_ROUNDS = '10';
+process.env.COOKIE_SECURE = 'false';
+process.env.COOKIE_SAME_SITE = 'lax';
+process.env.RATE_LIMIT_DISABLED = 'true';
+process.env.LOG_LEVEL = 'error';
+process.env.ALLOW_ADMIN_BOOTSTRAP = 'false';

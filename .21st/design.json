@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "project": {
+    "name": "fab-foods",
+    "productType": null,
+    "stack": []
+  },
+  "sources": {
+    "tokens": [],
+    "components": [],
+    "assets": [],
+    "instructions": []
+  },
+  "design": {
+    "colorMode": "unknown",
+    "colors": {},
+    "typography": {
+      "body": "Inter",
+      "display": "Cardo"
+    },
+    "spacing": {},
+    "radius": {},
+    "shadows": {},
+    "motion": {},
+    "density": "unknown"
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": [],
+    "patterns": []
+  },
+  "constraints": {
+    "must": [],
+    "avoid": []
+  },
+  "decisions": [
+    {
+      "title": "Customer typography",
+      "choice": "Use Inter for body, navigation, buttons, forms, labels and general UI; use Cardo for editorial display headings and selected display copy."
+    }
+  ],
+  "evidence": [],
+  "generatedAt": "2026-11-17T19:08:13.584Z"
+}

@@ -1,0 +1,41 @@
+{
+  "name": "fab-foods",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FAB FOODS restaurant and coffee platform",
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c green,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "demo": "concurrently -n demo-api,demo-web -c yellow,magenta \"node qa/demo-server.mjs\" \"npm run demo:web -w client\"",
+    "build": "npm run build -w client",
+    "start": "npm run start -w server",
+    "lint": "npm run lint -w server && npm run lint -w client",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test -w server && npm run test -w client",
+    "test:server": "npm run test -w server",
+    "test:client": "npm run test -w client",
+    "test:e2e": "playwright test",
+    "test:e2e:stage2": "playwright test qa/e2e/stage2.spec.js",
+    "test:e2e:stage3": "playwright test qa/e2e/stage3.spec.js",
+    "qa:lighthouse": "node qa/lighthouse.mjs",
+    "create-admin": "npm run create-admin -w server",
+    "seed:menu": "node server/scripts/seedMenu.js",
+    "images:menu": "npm run images:menu -w server"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "concurrently": "^9.2.1",
+    "lighthouse": "^13.6.0",
+    "prettier": "^3.6.2"
+  }
+}
