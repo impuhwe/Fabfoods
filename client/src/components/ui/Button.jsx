@@ -12,10 +12,6 @@ const VARIANTS = {
   ghost: 'bg-transparent text-cocoa-900 hover:bg-cream-200 active:bg-cream-300',
   danger: 'bg-danger text-cream-50 shadow-soft hover:bg-[#8f2f26] active:bg-[#7a2821]',
   onDark: 'bg-cream-100 text-cocoa-950 hover:bg-white active:bg-cream-200',
-  honey:
-    'bg-honey-500 text-cream-50 shadow-soft hover:bg-honey-400 active:bg-honey-600 disabled:hover:bg-honey-500',
-  honeyOutline:
-    'border border-honey-500 text-honey-500 bg-transparent hover:bg-honey-100 active:bg-honey-100/90',
 };
 
 const SIZES = {
