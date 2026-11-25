@@ -16,6 +16,7 @@ import {
   RESERVATION_IMAGE,
   STORY_IMAGE,
   categoryImage,
+  menuImage,
 } from '../../lib/imagery.js';
 import { SITE } from '../../lib/site.js';
 
@@ -43,12 +44,12 @@ const SERVICES = [
   },
 ];
 const HERO_CATEGORIES = [
-  { label: "Dishes",  thumb: "/images/cat-dishes.jpg",  plate:  FOOD_HERO_IMAGE},
-  { label: "Dessert", thumb: "/images/cat-dessert.jpg", plate:  COFFEE_IMAGE },
-  { label: "Drinks",  thumb: "/images/cat-drinks.jpg",  plate: "/images/plate-drinks.jpg" },
-  { label: "Platter", thumb: "/images/cat-platter.jpg", plate: "/images/plate-platter.jpg" },
-  { label: "Snacks",  thumb: "/images/cat-snacks.jpg",  plate: "/images/plate-snacks.jpg" },
-]
+  { label: 'Dishes', thumb: menuImage('continental-breakfast'), plate: FOOD_HERO_IMAGE },
+  { label: 'Dessert', thumb: menuImage('cake-of-the-day'), plate: COFFEE_IMAGE },
+  { label: 'Drinks', thumb: menuImage('strawberry-mojito'), plate: menuImage('iced-latte') },
+  { label: 'Platter', thumb: menuImage('whole-grilled-chicken'), plate: menuImage('fabfood-potatoes') },
+  { label: 'Snacks', thumb: menuImage('french-fries'), plate: menuImage('french-fries') },
+];
 
 export function HomePage() {
   const [meta, setMeta] = useState(null);
@@ -125,9 +126,6 @@ export function HomePage() {
               decoding="async"
               className="relative size-full rounded-full object-cover shadow-[0_35px_60px_-25px_rgba(70,45,10,0.45)]"
             />
-
-            {/* optional floating garnish: transparent PNG */}
-            <img src="/images/leaf.png" alt="" aria-hidden className="pointer-events-none absolute -right-4 -top-12 hidden w-28 rotate-12 sm:block" />
           </div>
 
           <ul className="mt-10 flex gap-3 overflow-x-auto pb-2 lg:absolute lg:right-0 lg:top-1/2 lg:mt-0 lg:-translate-y-1/2 lg:flex-col lg:overflow-visible">

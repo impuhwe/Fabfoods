@@ -1,4 +1,7 @@
-const localImage = (file) => `/images/menu/${file}.webp`;
+export const menuImage = (file) => `/images/menu/${file}.webp`;
+export const brandImage = (file) => `/brand/${file}`;
+
+const localImage = menuImage;
 
 const CATEGORY_IMAGES = {
   breakfast: localImage('continental-breakfast'),
@@ -22,6 +25,7 @@ const CATEGORY_IMAGES = {
   milkshake: localImage('chocolate-milkshake'),
 };
 
+export const BRAND_LOGO_IMAGE = brandImage('fab-foods-logo.webp');
 export const HIGH_PRIORITY_IMAGE_PROPS = Object.freeze({ fetchpriority: 'high' });
 
 export const HERO_IMAGE = localImage('continental-breakfast');

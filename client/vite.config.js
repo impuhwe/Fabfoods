@@ -29,6 +29,14 @@ export default defineConfig({
           });
         },
       },
+      '/images': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
+      '/brand': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
     },
   },
   preview: {

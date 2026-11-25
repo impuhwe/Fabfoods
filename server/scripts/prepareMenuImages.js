@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { menuImageEntries } from '../src/scripts/data/menu-images.manifest.js';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const outputDir = path.resolve(currentDir, '../../client/public/images/menu');
+const outputDir = path.resolve(currentDir, '../public/images/menu');
 const width = 1000;
 const quality = 74;
 const attempts = 3;

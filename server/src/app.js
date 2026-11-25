@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import env from './config/env.js';
@@ -8,6 +10,17 @@ import { corsMiddleware } from './security/cors.js';
 import { helmetMiddleware, sanitizeMiddleware } from './security/sanitize.js';
 import { ensureCsrfCookie, verifyCsrf } from './security/csrf.js';
 import { globalLimiter } from './security/rateLimit.js';
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const publicDir = path.resolve(currentDir, '../public');
+
+const staticImageOptions = {
+  dotfiles: 'deny',
+  fallthrough: true,
+  index: false,
+  maxAge: '1h',
+  redirect: false,
+};
 
 export function createApp() {
   const app = express();
@@ -33,6 +46,9 @@ export function createApp() {
   app.use(sanitizeMiddleware);
   app.use(ensureCsrfCookie);
   app.use(verifyCsrf);
+
+  app.use('/images/menu', express.static(path.join(publicDir, 'images/menu'), staticImageOptions));
+  app.use('/brand', express.static(path.join(publicDir, 'brand'), staticImageOptions));
 
   app.use(API_PREFIX, routes);
 

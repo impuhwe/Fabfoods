@@ -34,6 +34,14 @@ export default defineConfig({
           });
         },
       },
+      '/images': {
+        target: demoApiTarget,
+        changeOrigin: true,
+      },
+      '/brand': {
+        target: demoApiTarget,
+        changeOrigin: true,
+      },
     },
   },
   preview: {

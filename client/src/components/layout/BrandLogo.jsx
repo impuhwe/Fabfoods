@@ -1,9 +1,10 @@
+import { BRAND_LOGO_IMAGE } from '../../lib/imagery.js';
 import { cn } from '../../lib/cn.js';
 
 export function BrandLogo({ className, compact = false, onDark = false }) {
   const image = (
     <img
-      src="/brand/fab-foods-logo.webp"
+      src={BRAND_LOGO_IMAGE}
       alt="FAB FOODS"
       className={cn(
         'w-auto object-contain',
