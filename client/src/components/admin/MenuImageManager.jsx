@@ -191,7 +191,7 @@ export function MenuImageManager({ itemName, image, gallery = [], onChange, enab
                   type="button"
                   onClick={() => handleRemove(index)}
                   aria-label={`Remove gallery image ${index + 1}`}
-                  className="absolute right-1 top-1 rounded-full bg-cocoa-950/75 p-1 text-cream-50 transition-opacity focus:opacity-100 group-hover:opacity-100 sm:opacity-0"
+                  className="absolute right-1 top-1 rounded-full bg-cocoa-950/75 p-1 text-white transition-opacity focus:opacity-100 group-hover:opacity-100 sm:opacity-0"
                   disabled={disabled || busy || !enabled}
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />

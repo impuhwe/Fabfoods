@@ -9,7 +9,7 @@ export function Chip({ pressed = false, className, children, ...props }) {
         'inline-flex items-center rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember-400 focus-visible:ring-offset-2',
         pressed
-          ? 'border-cocoa-950 bg-cocoa-950 text-cream-50'
+          ? 'border-cocoa-950 bg-cocoa-950 text-white'
           : 'border-cocoa-900/20 bg-transparent text-cocoa-700 hover:bg-cream-200',
         className,
       )}

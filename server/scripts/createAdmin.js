@@ -1,3 +1,4 @@
+import dns from 'node:dns';
 import { pathToFileURL } from 'node:url';
 import bcrypt from 'bcrypt';
 import env from '../src/config/env.js';
@@ -6,6 +7,10 @@ import User from '../src/models/User.js';
 import { ROLES, USER_STATUS } from '../src/config/constants.js';
 import { createAdminSchema } from '../src/validators/auth.validator.js';
 import { conflict } from '../src/utils/errors.js';
+
+if (env.isDevelopment) {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+}
 
 export async function createAdmin({ name, email, password }) {
   const existing = await User.findOne({ email });

@@ -32,13 +32,22 @@ describe('Button', () => {
     expect(link.className).toContain('rounded-full');
   });
 
-  it('uses white text for the ordering variant without changing the background classes', () => {
-    render(<Button variant="order">Order now</Button>);
+  it('uses white text for filled variants without changing the background classes', () => {
+    render(
+      <>
+        <Button variant="order">Order now</Button>
+        <Button variant="danger">Delete now</Button>
+      </>,
+    );
 
-    const button = screen.getByRole('button', { name: 'Order now' });
-    expect(button.className).toContain('text-white');
-    expect(button.className).toContain('bg-ember-500');
-    expect(button.className).not.toContain('text-cocoa-950');
+    const order = screen.getByRole('button', { name: 'Order now' });
+    const danger = screen.getByRole('button', { name: 'Delete now' });
+    expect(order.className).toContain('text-white');
+    expect(order.className).toContain('bg-ember-500');
+    expect(danger.className).toContain('text-white');
+    expect(danger.className).toContain('bg-danger');
+    expect(order.className).not.toContain('text-cocoa-950');
+    expect(danger.className).not.toContain('text-cream-50');
   });
 
   it('keeps every other order variant class identical to the primary variant', () => {
@@ -51,13 +60,11 @@ describe('Button', () => {
 
     const primary = screen.getByRole('button', { name: 'Primary action' });
     const order = screen.getByRole('button', { name: 'Order action' });
-    expect(primary.className).toContain('text-cocoa-950');
-    const ignoringTextColor = (element, colorClass) =>
-      element.className.split(' ').filter((name) => name !== colorClass);
+    expect(primary.className).toContain('text-white');
+    const ignoringTextColor = (element) =>
+      element.className.split(' ').filter((name) => !/^text-/.test(name));
 
-    expect(ignoringTextColor(order, 'text-white')).toEqual(
-      ignoringTextColor(primary, 'text-cocoa-950'),
-    );
+    expect(ignoringTextColor(order)).toEqual(ignoringTextColor(primary));
     expect(
       order.className
         .split(' ')
